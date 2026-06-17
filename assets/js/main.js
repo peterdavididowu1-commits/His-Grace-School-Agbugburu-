@@ -91,49 +91,109 @@ document.addEventListener('DOMContentLoaded', () => {
   const loginForm = document.getElementById('loginForm');
 
   if (admissionForm) {
-    admissionForm.addEventListener('submit', (e) => {
+    admissionForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const submitBtn = admissionForm.querySelector('button[type="submit"]');
-      const origText = submitBtn.textContent;
+      const origText = submitBtn.innerHTML;
       
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Processing Admission Request...';
+      try {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Directing Enrolment Registry...';
 
-      // Simulate network request
-      setTimeout(() => {
-        const alertSuccess = document.getElementById('successAlert');
-        if (alertSuccess) {
-          alertSuccess.style.display = 'block';
-          alertSuccess.textContent = 'Congratulations! Your Admission enrollment request has been submitted successfully. Our Admin team will contact you shortly.';
-          admissionForm.reset();
-          window.scrollTo({ top: alertSuccess.offsetTop - 100, behavior: 'smooth' });
+        const studentName = document.getElementById('studentName').value.trim();
+        const studentDob = document.getElementById('studentDob').value;
+        const studentGender = document.getElementById('studentGender').value;
+        const gradeApplying = document.getElementById('gradeApplying').value;
+        const parentName = document.getElementById('parentName').value.trim();
+        const parentPhone = document.getElementById('parentPhone').value.trim();
+        const parentEmail = document.getElementById('parentEmail').value.trim();
+        const homeAddress = document.getElementById('homeAddress').value.trim();
+        const medicalNote = document.getElementById('medicalNote').value.trim();
+
+        // Dynamically import database helper
+        const { saveAdmission } = await import('./firebase-core.js');
+
+        const record = {
+          studentName,
+          studentDob,
+          studentGender,
+          gradeApplying,
+          parentName,
+          parentPhone,
+          parentEmail,
+          homeAddress,
+          medicalNote
+        };
+
+        const result = await saveAdmission(record);
+
+        if (result.success) {
+          const alertSuccess = document.getElementById('successAlert');
+          if (alertSuccess) {
+            alertSuccess.style.cssText = 'display: block; background-color: #dcfce7; color: #14532d; border: 1px solid #bbf7d0; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;';
+            alertSuccess.innerHTML = `
+              <strong>Congratulations!</strong> Your Admission enrollment request has been logged successfully under reference <strong>HGS-${result.id.slice(-5).toUpperCase()}</strong>.<br>
+              A coordinator will call <strong>${parentPhone}</strong> within 24 business hours to finalize grade assessments and schedule a campus meeting.
+            `;
+            admissionForm.reset();
+            window.scrollTo({ top: alertSuccess.offsetTop - 120, behavior: 'smooth' });
+          }
         }
+      } catch (err) {
+        alert("Enrolment registry encountered an error: " + err.message);
+      } finally {
         submitBtn.disabled = false;
-        submitBtn.textContent = origText;
-      }, 1500);
+        submitBtn.innerHTML = origText;
+      }
     });
   }
 
   if (contactForm) {
-    contactForm.addEventListener('submit', (e) => {
+    contactForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const submitBtn = contactForm.querySelector('button[type="submit"]');
-      const origText = submitBtn.textContent;
+      const origText = submitBtn.innerHTML;
       
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Sending Message...';
+      try {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Delivering Message...';
 
-      setTimeout(() => {
-        const alertSuccess = document.getElementById('successAlert');
-        if (alertSuccess) {
-          alertSuccess.style.display = 'block';
-          alertSuccess.textContent = 'Thank you! Your inquiry has been sent successfully. We will follow up via your email or phone call within 24 business hours.';
-          contactForm.reset();
-          window.scrollTo({ top: alertSuccess.offsetTop - 100, behavior: 'smooth' });
+        const contactName = document.getElementById('contactName').value.trim();
+        const contactPhone = document.getElementById('contactPhone').value.trim();
+        const contactEmail = document.getElementById('contactEmail').value.trim();
+        const contactSubject = document.getElementById('contactSubject').value;
+        const contactMessage = document.getElementById('contactMessage').value.trim();
+
+        const { saveContactMessage } = await import('./firebase-core.js');
+
+        const record = {
+          contactName,
+          contactPhone,
+          contactEmail,
+          contactSubject,
+          contactMessage
+        };
+
+        const result = await saveContactMessage(record);
+
+        if (result.success) {
+          const alertSuccess = document.getElementById('successAlert');
+          if (alertSuccess) {
+            alertSuccess.style.cssText = 'display: block; background-color: #dcfce7; color: #14532d; border: 1px solid #bbf7d0; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;';
+            alertSuccess.innerHTML = `
+              <strong>Thank you, ${contactName}!</strong> Your message (Subject: ${contactSubject}) has been catalogued in our desk inbox.<br>
+              The administrative division will respond via <strong>${contactEmail}</strong> or telephone shortly.
+            `;
+            contactForm.reset();
+            window.scrollTo({ top: alertSuccess.offsetTop - 120, behavior: 'smooth' });
+          }
         }
+      } catch (err) {
+        alert("Delivering message encountered an error: " + err.message);
+      } finally {
         submitBtn.disabled = false;
-        submitBtn.textContent = origText;
-      }, 1200);
+        submitBtn.innerHTML = origText;
+      }
     });
   }
 
@@ -141,16 +201,35 @@ document.addEventListener('DOMContentLoaded', () => {
     loginForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const submitBtn = loginForm.querySelector('button[type="submit"]');
-      const origText = submitBtn.textContent;
+      const origText = submitBtn.innerHTML;
       
+      const role = document.getElementById('portalRole').value;
+      const portalIdStr = document.getElementById('portalId').value.trim();
+
       submitBtn.disabled = true;
-      submitBtn.textContent = 'Authenticating Secure Student Portal...';
+      submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Opening secure gateway...';
 
       setTimeout(() => {
         submitBtn.disabled = false;
-        submitBtn.textContent = origText;
-        alert('Authentication success! In this cloud-preview environment, Student Portal is simulated with read-only dashboard access.');
-      }, 1500);
+        submitBtn.innerHTML = origText;
+
+        if (role === 'Teacher') {
+          // Instructors are guided directly to the executive admin-login form
+          alert("Welcome Instructor! Redirecting you to the secure Administrative Center login portal...");
+          window.location.href = 'admin-login.html';
+        } else {
+          // Compute friendly student identity
+          let testStudentName = "Adebayo Daniel";
+          let testClass = (role === 'Parent') ? "Primary Grade 1 (Parent Account)" : "Primary Grade 1";
+
+          // If they typed something textual (not an alphanumeric ID), utilize that as their student handle for high-fidelity immersion!
+          if (portalIdStr && !portalIdStr.includes('/') && isNaN(portalIdStr) && portalIdStr.length > 3) {
+            testStudentName = portalIdStr;
+          }
+
+          window.location.href = `student-portal.html?name=${encodeURIComponent(testStudentName)}&class=${encodeURIComponent(testClass)}`;
+        }
+      }, 1000);
     });
   }
 });

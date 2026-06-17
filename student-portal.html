@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student & Parent Portal - His Grace School</title>
+  
+  <!-- Typography & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    body {
+      background-color: #f8fafc;
+    }
+    .portal-container {
+      padding: 3rem 0;
+    }
+    .portal-banner {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+      color: #ffffff;
+      padding: 2.5rem;
+      border-radius: var(--border-radius-lg);
+      box-shadow: var(--shadow-md);
+      margin-bottom: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+    }
+    .portal-layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 2rem;
+    }
+    .portal-sidebar {
+      background-color: #ffffff;
+      padding: 1.75rem;
+      border-radius: var(--border-radius-md);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
+      height: fit-content;
+    }
+    .portal-menu {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    .portal-menu-item a {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      border-radius: var(--border-radius-sm);
+      font-weight: 600;
+      color: var(--text-dark);
+      font-size: 0.95rem;
+      transition: var(--transition);
+    }
+    .portal-menu-item a:hover,
+    .portal-menu-item.active a {
+      background-color: var(--primary-light);
+      color: var(--primary);
+    }
+    .portal-section {
+      display: none;
+    }
+    .portal-section.active {
+      display: block;
+    }
+    .profile-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background-color: rgba(255, 255, 255, 0.15);
+      padding: 0.5rem 1rem;
+      border-radius: 50px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .score-grade {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--secondary);
+    }
+    @media (max-width: 900px) {
+      .portal-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header Navigation -->
+  <header>
+    <div class="container nav-bar">
+      <div class="logo-container">
+        <img src="assets/images/logo.jpg" alt="His Grace School Crest" class="logo-img">
+        <div class="logo-text">
+          <h1>His Grace School</h1>
+          <span>Agbugburu Village • Abeokuta</span>
+        </div>
+      </div>
+      
+      <!-- Desktop Navigation Menu -->
+      <ul class="nav-menu">
+        <li><a href="index.html" class="nav-link">Home</a></li>
+        <li><a href="about.html" class="nav-link">About Us</a></li>
+        <li><a href="admissions.html" class="nav-link">Admissions</a></li>
+        <li><a href="academics.html" class="nav-link">Academics</a></li>
+        <li><a href="contact.html" class="nav-link">Contact Us</a></li>
+      </ul>
+      
+      <!-- Desktop Portal Button -->
+      <div class="nav-cta">
+        <a href="student-portal.html" class="btn btn-primary"><i class="fa-solid fa-user-graduate"></i> My Portal</a>
+      </div>
+
+      <!-- Mobile Menu Toggle Button -->
+      <button class="mobile-toggle" id="mobileToggle" aria-label="Toggle Navigation">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Mobile Navigation Menu Overlay -->
+  <div class="mobile-menu-overlay" id="mobileMenuOverlay">
+    <ul>
+      <li><a href="index.html" class="nav-link">Home</a></li>
+      <li><a href="about.html" class="nav-link">About Us</a></li>
+      <li><a href="admissions.html" class="nav-link">Admissions</a></li>
+      <li><a href="academics.html" class="nav-link">Academics</a></li>
+      <li><a href="contact.html" class="nav-link">Contact Us</a></li>
+      <li><a href="student-portal.html" class="nav-link active"><i class="fa-solid fa-user-graduate"></i> Student Portal</a></li>
+    </ul>
+  </div>
+
+  <!-- Portal Dashboard -->
+  <div class="container portal-container">
+    <!-- Header Banner -->
+    <div class="portal-banner">
+      <div>
+        <span class="profile-badge"><i class="fa-solid fa-child"></i> Verified Pupil Profile</span>
+        <h2 style="font-size: 2rem; font-weight: 800; margin-top: 0.5rem; letter-spacing: -0.01em;">Welcome back, <span id="studentPortalName">Adebayo Daniel</span>!</h2>
+        <p style="opacity: 0.9; margin-top: 0.25rem;">Nursery & Primary School Student Learning Console.</p>
+      </div>
+      <div>
+        <a href="login.html" class="btn btn-accent" style="font-size: 0.85rem; padding: 0.5rem 1.25rem;"><i class="fa-solid fa-power-off"></i> Secure Exit</a>
+      </div>
+    </div>
+
+    <!-- Layout Grid -->
+    <div class="portal-layout">
+      <!-- Sidebar Panel -->
+      <aside class="portal-sidebar">
+        <div class="text-center" style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1.5rem;">
+          <img src="assets/images/logo.jpg" alt="Student avatar placeholder" style="width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 0.75rem auto; border: 3px solid var(--primary);">
+          <h4 style="font-size: 1.1rem; color: var(--primary); font-weight: 700;" id="sidebarName">Adebayo Daniel</h4>
+          <span class="badge" style="font-size: 0.7rem; margin-top: 0.25rem;" id="studentClassBadge">Primary Grade 1</span>
+        </div>
+        
+        <h5 style="text-transform: uppercase; font-size: 0.75rem; color: var(--text-muted); font-weight: 800; letter-spacing: 0.05em; padding-left: 0.75rem;">Interactive Panel</h5>
+        <ul class="portal-menu">
+          <li class="portal-menu-item active" data-target="feed">
+            <a href="#"><i class="fa-solid fa-bullhorn" style="width: 20px;"></i> School Noticeboard</a>
+          </li>
+          <li class="portal-menu-item" data-target="grades">
+            <a href="#"><i class="fa-solid fa-square-poll-vertical" style="width: 20px;"></i> Termly Report Sheet</a>
+          </li>
+          <li class="portal-menu-item" data-target="homework">
+            <a href="#"><i class="fa-solid fa-book-open-reader" style="width: 20px;"></i> Homework Tasks</a>
+          </li>
+          <li class="portal-menu-item" data-target="billings">
+            <a href="#"><i class="fa-solid fa-wallet" style="width: 20px;"></i> Accounts & Billings</a>
+          </li>
+        </ul>
+      </aside>
+
+      <!-- Main Portal Frame -->
+      <main class="portal-content">
+        
+        <!-- ==========================================
+             SECTION 1: NOTICEBOARD
+             ========================================== -->
+        <section id="portal-feed" class="portal-section active">
+          <h3 style="font-size: 1.25rem; color: var(--primary); margin-bottom: 1.25rem; font-weight: 800;"><i class="fa-solid fa-bullhorn" style="color: var(--accent);"></i> Central School Board Announcements</h3>
+          
+          <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+            <!-- Announcement 1 -->
+            <div class="card" style="background-color: #ffffff; padding: 1.5rem; border-left: 4px solid var(--primary);">
+              <div class="d-flex justify-between" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                <strong>Office of the Headteacher</strong>
+                <span>Wednesday, June 17, 2026/span>
+              </div>
+              <h4 style="color: var(--primary); font-size: 1.05rem; font-weight: 700; margin-bottom: 0.5rem;">Announcing Standard Termly Open Day Event</h4>
+              <p style="font-size: 0.9rem; color: var(--text-dark); line-height: 1.5;">Dear Parents & Guardians, we are excited to remind you of the upcoming Termly Open Day taking place this Friday on our main campus. Join us to directly audit your child's continuous drawing worksheets, computing lab progress, and exercise notebook sheets. Personal sessions with level coaches will be held from 9:00 AM.</p>
+              <span class="badge" style="font-size: 0.7rem; margin-top: 0.75rem; background-color: #eff6ff; color: var(--primary);">Mandatory Event</span>
+            </div>
+
+            <!-- Announcement 2 -->
+            <div class="card" style="background-color: #ffffff; padding: 1.5rem; border-left: 4px solid var(--secondary);">
+              <div class="d-flex justify-between" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                <strong>Admissions & Registry Office</strong>
+                <span>Saturday, June 13, 2026</span>
+              </div>
+              <h4 style="color: var(--secondary); font-size: 1.05rem; font-weight: 700; margin-bottom: 0.5rem;">Admission Portals for New Term Now Active Online</h4>
+              <p style="font-size: 0.9rem; color: var(--text-dark); line-height: 1.5;">We have officially activated our new online Smart Enrollment application system for admissions. Parents wishing to register active child bookings (including Creche, Montessori Nursery, and Primary Grade divisions) are instructed to direct their friends to click 'Apply Online Now' on the main homepage. No physically written documents are required during initial bookings.</p>
+              <span class="badge" style="font-size: 0.7rem; margin-top: 0.75rem; background-color: #dcfce7; color: var(--secondary); text-transform: capitalize;">General Update</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==========================================
+             SECTION 2: REPORT SHEET
+             ========================================== -->
+        <section id="portal-grades" class="portal-section">
+          <div class="d-flex justify-between align-center" style="margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;">
+            <h3 style="font-size: 1.25rem; color: var(--primary); font-weight: 800; margin: 0;"><i class="fa-solid fa-square-poll-vertical"></i> Academic Standing Report</h3>
+            <span class="badge" style="background-color: #fee2e2; color: #ef4444; font-weight: 800;">Mid-Term Grades Published</span>
+          </div>
+
+          <div class="card" style="background-color: #ffffff; padding: 1.5rem; margin-bottom: 1.5rem;">
+            <div style="display: flex; gap: 2rem; flex-wrap: wrap; margin-bottom: 1.5rem; background-color: var(--primary-light); padding: 1rem; border-radius: var(--border-radius-sm);">
+              <div>
+                <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;">Termly Performance</span>
+                <p style="font-size: 1.15rem; font-weight: 800; color: var(--primary);">40% Homework + 60% Exam</p>
+              </div>
+              <div>
+                <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;">Average score</span>
+                <p style="font-size: 1.15rem; font-weight: 800; color: var(--secondary);">86.4% (Outstanding)</p>
+              </div>
+              <div>
+                <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;">Attendance Rate</span>
+                <p style="font-size: 1.15rem; font-weight: 800; color: var(--accent);">98% (High Constant)</p>
+              </div>
+            </div>
+
+            <!-- Subject Scores Table -->
+            <div class="card-table-wrap" style="box-shadow: none; border: 1px solid var(--border-color);">
+              <table class="db-table">
+                <thead>
+                  <tr>
+                    <th>Academic Subject Course</th>
+                    <th style="text-align: center;">CA Marks (40)</th>
+                    <th style="text-align: center;">Exam Score (60)</th>
+                    <th style="text-align: center;">Total (100)</th>
+                    <th style="text-align: center;">Grade Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>English Language & Phonics</strong></td>
+                    <td style="text-align: center;">36</td>
+                    <td style="text-align: center;">54</td>
+                    <td style="text-align: center; font-weight: 700;">90</td>
+                    <td style="text-align: center;"><span class="score-grade">A+</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Quantitative Mathematics</strong></td>
+                    <td style="text-align: center;">38</td>
+                    <td style="text-align: center;">52</td>
+                    <td style="text-align: center; font-weight: 700;">90</td>
+                    <td style="text-align: center;"><span class="score-grade">A+</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Computer Literacy Basics</strong></td>
+                    <td style="text-align: center;">35</td>
+                    <td style="text-align: center;">48</td>
+                    <td style="text-align: center; font-weight: 700;">83</td>
+                    <td style="text-align: center;"><span class="score-grade" style="color: var(--primary);">A</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Civic & Christian Characters</strong></td>
+                    <td style="text-align: center;">40</td>
+                    <td style="text-align: center;">55</td>
+                    <td style="text-align: center; font-weight: 700;">95</td>
+                    <td style="text-align: center;"><span class="score-grade">A+</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Agricultural Sciences</strong></td>
+                    <td style="text-align: center;">30</td>
+                    <td style="text-align: center;">48</td>
+                    <td style="text-align: center; font-weight: 700;">78</td>
+                    <td style="text-align: center;"><span class="score-grade" style="color: var(--accent);">B+</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div style="border-top: 1.5px solid var(--border-color); padding-top: 1.25rem; font-size: 0.9rem; color: var(--text-dark); background-color: #fafbfc; border-radius: 6px; padding: 1rem; margin-top: 1.5rem;">
+              <strong>Remarks of Level Coach:</strong>
+              <p style="font-style: italic; color: var(--text-muted); margin-top: 0.25rem;">"Daniel is a highly obedient, focused, and cooperative child. His quantitative mathematical logic and digital workspace results have been exceptional. Highly active attendee of weekly prayers. Approved and promoted!"</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==========================================
+             SECTION 3: HOMEWORK TASKS
+             ========================================== -->
+        <section id="portal-homework" class="portal-section">
+          <h3 style="font-size: 1.25rem; color: var(--primary); margin-bottom: 1.25rem; font-weight: 800;"><i class="fa-solid fa-book-open-reader"></i> Active Homework Assignments</h3>
+          
+          <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+            <!-- Task 1 -->
+            <div class="card" style="background-color: #ffffff; padding: 1.5rem; box-shadow: var(--shadow-sm); border: 1.5px solid var(--border-color);">
+              <div class="d-flex justify-between" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                <strong>Quantitative Arithmetic Worksheet</strong>
+                <span>Due Date: Monday, June 22</span>
+              </div>
+              <h4 style="font-weight: 700; color: var(--text-dark); margin-bottom: 0.25rem;">Subtraction Structures of Double Digits</h4>
+              <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.4;">Complete page 24 inside the physical Quantities Assessment book. Ensure handwriting is neat and double check carries.</p>
+              <span class="badge" style="font-size: 0.7rem; margin-top: 0.75rem; background-color: #fef3c7; color: #b45309;"><i class="fa-solid fa-hourglass"></i> Pending Submission</span>
+            </div>
+
+            <!-- Task 2 -->
+            <div class="card" style="background-color: #ffffff; padding: 1.5rem; box-shadow: var(--shadow-sm); border: 1.5px solid var(--border-color);">
+              <div class="d-flex justify-between" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                <strong>Civic Character Education</strong>
+                <span>Due Date: Thursday, June 18</span>
+              </div>
+              <h4 style="font-weight: 700; color: var(--text-dark); margin-bottom: 0.25rem;">Drafting Community Leadership Essays</h4>
+              <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.4;">Explain 3 easy ways children show godly respect to elders in Agbugburu Village. Write your draft directly in the Character Notebook.</p>
+              <span class="badge" style="font-size: 0.7rem; margin-top: 0.75rem; background-color: #eff6ff; color: var(--primary);"><i class="fa-solid fa-square-check"></i> Graded 10/10 Excellent</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==========================================
+             SECTION 4: BILLINGS
+             ========================================== -->
+        <section id="portal-billings" class="portal-section">
+          <h3 style="font-size: 1.25rem; color: var(--primary); margin-bottom: 1.25rem; font-weight: 800;"><i class="fa-solid fa-wallet"></i> Billings & Accounts Statements</h3>
+
+          <div class="grid-2" style="margin-bottom: 1.5rem; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;">
+            <div class="card text-center" style="background-color: #ffffff; padding: 1.5rem; border-top: 4px solid var(--secondary);">
+              <h5 style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">Outstanding Balance</h5>
+              <div style="font-size: 1.75rem; font-weight: 800; color: var(--secondary); margin: 0.5rem 0;">₦ 0.00</div>
+              <span class="badge" style="background-color: #dcfce7; color: var(--secondary); font-size: 0.7rem;">Tuition Paid Fully</span>
+            </div>
+
+            <div class="card text-center" style="background-color: #ffffff; padding: 1.5rem; border-top: 4px solid var(--accent);">
+              <h5 style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">Active Accessories Checked</h5>
+              <div style="font-size: 1.75rem; font-weight: 800; color: var(--text-dark); margin: 0.5rem 0;">All Supplied</div>
+              <span class="badge" style="background-color: #eff6ff; color: var(--primary); font-size: 0.7rem;">Books & Uniforms Issued</span>
+            </div>
+          </div>
+
+          <div class="card" style="background-color: #ffffff; padding: 1.5rem; margin-bottom: 1.5rem;">
+            <h4 style="color: var(--primary); font-size: 1.05rem; font-weight: 700; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">Termly Tuition Receipts Log</h4>
+            
+            <div class="card-table-wrap" style="box-shadow: none; border: 1px solid var(--border-color);">
+              <table class="db-table">
+                <thead>
+                  <tr>
+                    <th>Item/Reference ID</th>
+                    <th>Payment Statement</th>
+                    <th>Amount Paid</th>
+                    <th style="text-align: center;">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>#HGS-TUI-8941</strong></td>
+                    <td>Admissions registration and termly basic tuition fee</td>
+                    <td style="font-weight: 700;">₦ 45,000.00</td>
+                    <td style="text-align: center;"><span class="badge" style="background-color: #dcfce7; color: var(--secondary);">Verified</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>#HGS-ACC-3490</strong></td>
+                    <td>Academic Textbooks set and exercise supplies folder</td>
+                    <td style="font-weight: 700;">₦ 15,000.00</td>
+                    <td style="text-align: center;"><span class="badge" style="background-color: #dcfce7; color: var(--secondary);">Verified</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>#HGS-UNI-2391</strong></td>
+                    <td>Uniform wear assembly and physical athletics wear</td>
+                    <td style="font-weight: 700;">₦ 10,000.00</td>
+                    <td style="text-align: center;"><span class="badge" style="background-color: #dcfce7; color: var(--secondary);">Verified</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Payment Guidelines -->
+            <div style="background-color: #fafbfc; border-radius: var(--border-radius-sm); border: 1.5px dashed var(--border-color); padding: 1.25rem; font-size: 0.85rem; margin-top: 1.5rem;">
+              <h5 style="color: var(--primary); font-weight: 700; font-size: 0.9rem; margin-bottom: 0.5rem;"><i class="fa-solid fa-circle-info"></i> Official Bank Payment Inquiries</h5>
+              <p style="color: var(--text-muted); line-height: 1.5;">To settle additional accessory billings or pre-register upcoming academic sessions, use the direct bank transfer route below:</p>
+              <div style="font-family: monospace; background-color: #ffffff; padding: 0.75rem; border-radius: var(--border-radius-sm); margin-top: 0.5rem; border: 1px dashed var(--border-color); color: var(--text-dark);">
+                <strong>Bank Name:</strong> GTBank • Guaranteed Trust Bank Plc<br>
+                <strong>Account Number:</strong> 08137606078 (GTBank Business)<br>
+                <strong>Recipient Identifier:</strong> His Grace Nursery and Primary School
+              </div>
+              <p style="color: var(--text-dark); margin-top: 0.5rem; font-weight: 600;"><i class="fa-solid fa-triangle-exclamation" style="color: var(--accent);"></i> Note: Please email screen captures of successfully routed bank transaction receipts to <strong style="color:var(--primary);">hisgraceschool.name.ng@gmail.com</strong> for rapid clearance mapping confirmation.</p>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer style="margin-top: 4rem;">
+    <div class="container footer-grid">
+      <div class="footer-col">
+        <div class="logo-container" style="margin-bottom: 1.25rem;">
+          <img src="assets/images/logo.jpg" alt="His Grace Crest" class="logo-img" style="border: 2px solid var(--accent);">
+          <h3 style="color: white; margin-bottom: 0;">His Grace School</h3>
+        </div>
+        <p>Moulding local learners into responsible, confident, and academically sound community leaders of tomorrow. Built on faith, academic standards, and godly grace.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Useful Links</h4>
+        <ul class="footer-links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+        </ul>
+      </div>
+    </div>
+    
+    <div class="footer-bottom">
+      <div class="container d-flex justify-between align-center flex-column" style="gap: 1rem;">
+        <p>&copy; 2026 His Grace Nursery & Primary School. All rights reserved.</p>
+        <span class="badge" style="background-color: rgba(255, 255, 255, 0.1); color: var(--accent); font-weight: 700;">Motto: Building Lives for Greatness</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Script Navigation bindings -->
+  <script type="module">
+    document.addEventListener('DOMContentLoaded', () => {
+      // Setup dynamic welcome names if they passed pupil details in the query parameters!
+      const params = new URLSearchParams(window.location.search);
+      const customName = params.get('name');
+      const customClass = params.get('class');
+
+      if (customName) {
+        document.getElementById('studentPortalName').textContent = customName;
+        document.getElementById('sidebarName').textContent = customName;
+      }
+      if (customClass) {
+        document.getElementById('studentClassBadge').textContent = customClass;
+      }
+
+      const menuItems = document.querySelectorAll('.portal-menu-item');
+      const sections = document.querySelectorAll('.portal-section');
+
+      menuItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+          e.preventDefault();
+          const target = item.getAttribute('data-target');
+
+          // Toggle menu highlights
+          menuItems.forEach(mi => mi.classList.remove('active'));
+          item.classList.add('active');
+
+          // Toggle section views
+          sections.forEach(sec => sec.classList.remove('active'));
+          const targetSec = document.getElementById(`portal-${target}`);
+          if (targetSec) targetSec.classList.add('active');
+        });
+      });
+
+      // Mobile toggling menu
+      const mobileToggle = document.getElementById('mobileToggle');
+      const mobileMenu = document.getElementById('mobileMenuOverlay');
+      if (mobileToggle && mobileMenu) {
+        mobileToggle.addEventListener('click', () => {
+          mobileMenu.classList.toggle('active');
+          mobileToggle.classList.toggle('open');
+        });
+      }
+    });
+  </script>
+</body>
+</html>
