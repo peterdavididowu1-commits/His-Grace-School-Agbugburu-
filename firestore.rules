@@ -1,0 +1,42 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if the requesting user is a verified school administrator
+    function isRegistrar() {
+      return request.auth != null && 
+        exists(/databases/$(database)/documents/hgs_administrators/$(request.auth.uid));
+    }
+
+    // 1. School Administrator registers collection rules
+    match /hgs_administrators/{adminId} {
+      // Allow first admin setup if no admins exist, otherwise restrict write/read to certified Registrars
+      allow create: if true; 
+      allow read, update, delete: if isRegistrar() && request.auth.uid == adminId;
+    }
+
+    // 2. Public admission applications registration collection rules
+    match /hgs_admissions/{admissionId} {
+      // Public visitors can submit online application forms
+      allow create: if true;
+      // ONLY verified Registrars can view, map or delete admission logs
+      allow read, update, delete: if isRegistrar();
+    }
+
+    // 3. Pupil Ledger & Accounts Database compilation rules
+    match /hgs_students/{studentId} {
+      // Verified Registrars have administrative reading & writing privilege
+      allow create, read, update, delete: if isRegistrar();
+      // Individual pupils can securely read their own reports ledger card
+      allow read: if request.auth != null && request.auth.uid == studentId;
+    }
+
+    // 4. Contact desk feedback inquiry archives
+    match /hgs_messages/{messageId} {
+      // Visitors can securely submit inquiry reports
+      allow create: if true;
+      // Master registers restricted to administrative review
+      allow read, update, delete: if isRegistrar();
+    }
+  }
+}

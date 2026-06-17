@@ -962,7 +962,7 @@
     document.addEventListener('DOMContentLoaded', async () => {
       // 1. Session verification & Security wall
       const session = getActiveAdminSession();
-      if (!session) {
+      if (!session || (session.role && session.role !== 'Registrar' && session.role !== 'Administrator')) {
         window.location.replace('admin-login.html');
         return;
       }

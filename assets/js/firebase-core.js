@@ -269,7 +269,7 @@ export const createAdministrator = async (email, password, fullName) => {
   const profile = {
     fullName: fullName,
     email: email.toLowerCase().trim(),
-    role: "Administrator",
+    role: "Registrar",
     createdAt: new Date().toISOString()
   };
 
@@ -324,11 +324,11 @@ export const loginAdministrator = async (email, password) => {
       
       if (docSnap.exists()) {
         const profile = docSnap.data();
-        localStorage.setItem('hgs_session', JSON.stringify({ uid, email: sanitizedEmail, fullName: profile.fullName || "Admin" }));
+        localStorage.setItem('hgs_session', JSON.stringify({ uid, email: sanitizedEmail, fullName: profile.fullName || "Admin", role: profile.role || "Registrar" }));
         return { success: true, profile };
       } else {
         // Logged in but no mapping? Create a placeholder metadata instantly
-        const profile = { fullName: "Admin Staff", email: sanitizedEmail, role: "Administrator", createdAt: new Date().toISOString(), uid };
+        const profile = { fullName: "Admin Staff", email: sanitizedEmail, role: "Registrar", createdAt: new Date().toISOString(), uid };
         await sdkFirestore.setDoc(docRef, profile);
         localStorage.setItem('hgs_session', JSON.stringify(profile));
         return { success: true, profile };
@@ -344,7 +344,7 @@ export const loginAdministrator = async (email, password) => {
     // Check credentials matching
     const admin = list.find(item => item.email === sanitizedEmail && item.passwordHash === btoa(password));
     if (admin) {
-      const sessionUser = { uid: admin.uid, email: admin.email, fullName: admin.fullName };
+      const sessionUser = { uid: admin.uid, email: admin.email, fullName: admin.fullName, role: admin.role || "Registrar" };
       localStorage.setItem('hgs_session', JSON.stringify(sessionUser));
       return { success: true, profile: admin };
     } else {
