@@ -10,9 +10,9 @@ service cloud.firestore {
 
     // 1. School Administrator registers collection rules
     match /hgs_administrators/{adminId} {
-      // Allow first admin setup if no admins exist, otherwise restrict write/read to certified Registrars
-      allow create: if true; 
-      allow read, update, delete: if isRegistrar() && request.auth.uid == adminId;
+      // Allow first admin setup and check if admins exist, and read matching profile on login
+      allow create, read: if true; 
+      allow update, delete: if request.auth != null && request.auth.uid == adminId;
     }
 
     // 2. Public admission applications registration collection rules

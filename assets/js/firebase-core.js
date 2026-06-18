@@ -289,10 +289,13 @@ export const createAdministrator = async (email, password, fullName) => {
 // Administrator Log-in
 export const loginAdministrator = async (email, password) => {
   const sanitizedEmail = email.toLowerCase().trim();
+  const attemptId = "LGN-" + Date.now();
+  console.log(`[Admin Login Attempt] ID: ${attemptId} | Email: ${sanitizedEmail}`);
 
   try {
     const result = await sdkAuth.signInWithEmailAndPassword(auth, sanitizedEmail, password);
     const uid = result.user.uid;
+    console.log(`[Admin Login FirebaseAuth Success] ID: ${attemptId} | UID: ${uid}`);
 
     // Check if user has admin record in Firestore
     const docRef = sdkFirestore.doc(db, "hgs_administrators", uid);
@@ -300,17 +303,20 @@ export const loginAdministrator = async (email, password) => {
     
     if (docSnap.exists()) {
       const profile = docSnap.data();
-      localStorage.setItem('hgs_session', JSON.stringify({ uid, email: sanitizedEmail, fullName: profile.fullName || "Admin", role: profile.role || "Registrar" }));
+      const sessionObj = { uid, email: sanitizedEmail, fullName: profile.fullName || "Admin", role: profile.role || "Registrar" };
+      localStorage.setItem('hgs_session', JSON.stringify(sessionObj));
+      console.log(`[Admin Login Full Success] ID: ${attemptId} | Profile loaded for: ${sessionObj.fullName}`);
       return { success: true, profile };
     } else {
       // Logged in but no mapping? Create a placeholder metadata instantly
       const profile = { fullName: "Admin Staff", email: sanitizedEmail, role: "Registrar", createdAt: new Date().toISOString(), uid };
       await sdkFirestore.setDoc(docRef, profile);
       localStorage.setItem('hgs_session', JSON.stringify(profile));
+      console.log(`[Admin Login Success (Created profile)] ID: ${attemptId} | Profile newly created for: ${profile.fullName}`);
       return { success: true, profile };
     }
   } catch (err) {
-    console.error("Firestore/Auth loginAdministrator failed:", err);
+    console.error(`[Admin Login Failure] ID: ${attemptId} | Code: ${err.code || "unknown-code"} | Message: ${err.message}`, err);
     throw err;
   }
 };

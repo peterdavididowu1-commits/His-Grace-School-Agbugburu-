@@ -250,7 +250,13 @@
 
       // Check registration logic requirements
       const activeSession = getActiveAdminSession();
-      const exist = await checkAdminsExist();
+      let exist = true;
+      try {
+        exist = await checkAdminsExist();
+      } catch (err) {
+        console.warn("Could not check if administrators exist (highly likely because of firestore read restrictions on unauthenticated sessions):", err);
+        exist = true; // Fallback to true to protect the registration endpoint
+      }
 
       if (activeSession) {
         // Logged-in admin adding another admin

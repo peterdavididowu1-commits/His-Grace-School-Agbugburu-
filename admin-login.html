@@ -261,7 +261,14 @@
       };
 
       // Ensure Master Admin entry exists
-      const exist = await checkAdminsExist();
+      let exist = true;
+      try {
+        exist = await checkAdminsExist();
+      } catch (err) {
+        console.warn("Could not retrieve exist status of administrator collection (likely due to secure Firestore access controls):", err);
+        // Default to true assuming some admins exist to keep the page secure and standard login active
+        exist = true; 
+      }
       if (!exist) {
         setupAlert.className = 'alert alert-info';
         showAlert(setupAlert, "System Setup Triggered: No registered school administrator detected. Please initialize your owner credential to protect access.");
@@ -285,16 +292,20 @@
           loginSubmitBtn.disabled = true;
           loginSubmitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Securing Connection...';
 
+          console.log(`[UI Admin Login Form Submitted] Email: ${email}`);
           const res = await loginAdministrator(email, password);
 
           if (res.success) {
+            console.log(`[UI Admin Login Success] Redirecting... Welcome, ${res.profile.fullName}`);
             showAlert(successAlert, `Verification Success! Welcoming back, ${res.profile.fullName || "Administrator"}. Loading dashboard...`);
             setTimeout(() => {
               window.location.href = 'admin-dashboard.html';
             }, 1000);
           }
         } catch (err) {
-          showAlert(errorAlert, err.message || "Credential mapping failed. Verify spelling or connectivity settings.");
+          console.error(`[UI Admin Login Error] Reason: ${err.message} | Code: ${err.code || "unknown-code"}`, err);
+          const detailedErrorMsg = `Authentication Unsuccessful: ${err.message || "Credential mapping failed."} (Firebase Code: ${err.code || "unknown-error-code"})`;
+          showAlert(errorAlert, detailedErrorMsg);
           loginSubmitBtn.disabled = false;
           loginSubmitBtn.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Login To Dashboard';
         }
