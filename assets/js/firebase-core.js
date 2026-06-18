@@ -742,7 +742,7 @@ export const approveAdmission = async (admissionId, operatorName = "Registrar") 
   await saveStudent(studentPayload);
 
   // 5. Build notifications payloads
-  const portalUrl = window.location.origin + "/login.html";
+  const portalUrl = "https://peterdavididowu1-commits.github.io/His-Grace-School-Agbugburu-/login.html";
   const notificationContent = {
     studentName: targetApplication.studentName,
     admissionNumber: uniqueNum,
@@ -841,7 +841,7 @@ export const resendStudentCredentials = async (studentId, operatorName = "Regist
     throw new Error("The recipient's email address (guardianEmail) is empty. Unable to resend credentials via email. Please configure an email address first.");
   }
 
-  const portalUrl = window.location.origin + "/login.html";
+  const portalUrl = "https://peterdavididowu1-commits.github.io/His-Grace-School-Agbugburu-/login.html";
   const notificationContent = {
     studentName: student.studentName,
     admissionNumber: student.admissionNumber,
@@ -972,6 +972,8 @@ export const sendEmailNotification = async (recipientEmail, subject, payload) =>
     throw new Error("Aborted: Recipient address (guardianEmail) is empty. Dispatch canceled.");
   }
 
+  const portalUrlFixed = "https://peterdavididowu1-commits.github.io/His-Grace-School-Agbugburu-/login.html";
+
   // Log the recipient email address before sending
   console.log(`[Notification Engine] [PRE-SEND VERIFICATION] Recipient email resolved: "${recipientEmail.trim()}". Outgoing Subject: "${subject}".`);
 
@@ -982,11 +984,11 @@ export const sendEmailNotification = async (recipientEmail, subject, payload) =>
   const textBody = `
 Dear Guardian,
 
-We are delighted to inform you that the school registration request for "${payload.studentName}" has been APPROVED by His Grace High School Registry Council on ${dateStr} @ ${timeStr}!
+We are delighted to inform you that the school registration request for "${payload.studentName}" has been APPROVED by His Grace Nursery & Primary School Registry Council on ${dateStr} @ ${timeStr}!
 
 A pupil portal card has been provisioned on our registers. Please find your active credentials below:
 
-- Student Portal URL: ${payload.portalUrl}
+- Student Portal URL: ${portalUrlFixed}
 - Entry Username: ${payload.username} (Admission Number)
 - Secure Entry Password: ${payload.password}
 
@@ -1015,30 +1017,25 @@ His Grace Nursery & Primary School
       user_id: config.emailjsPublicKey,
       template_params: {
         subject: subject,
-        recipient_email: recipientEmail,
-        to_email: recipientEmail, // Standard parameter compatibility
-        email: recipientEmail, // Map guardianEmail to the variable named 'email'
-        guardianEmail: recipientEmail,
+        recipient_email: recipientEmail.trim(),
+        to_email: recipientEmail.trim(), // Standard parameter compatibility
+        email: recipientEmail.trim(), // Map guardianEmail to the variable named 'email'
+        guardianEmail: recipientEmail.trim(),
         student_name: payload.studentName,
         admission_number: payload.admissionNumber,
         username: payload.username,
         password: payload.password,
-        portal_url: payload.portalUrl,
+        portal_url: portalUrlFixed,
         parent_phone: payload.guardianPhone || "N/A",
         date_time: `${dateStr} ${timeStr}`,
         message: textBody
       }
     };
 
-    console.log("=== EMAILJS DIAGNOSTIC PRE-SEND LOG ===");
-    console.log(`- Service ID: ${config.emailjsServiceId}`);
-    console.log(`- Template ID: ${config.emailjsTemplateId}`);
-    console.log(`- Public Key: ${config.emailjsPublicKey}`);
-    console.log(`- Recipient Email: ${recipientEmail}`);
-    console.log(`- Sender Email: ${config.fromEmail || "N/A"}`);
-    console.log(`- Subject: ${subject}`);
-    console.log("- Full EmailJS Payload:", JSON.stringify(payloadBody, null, 2));
-    console.log("========================================");
+    console.log("=== EMAILJS PRE-SEND DIAGNOSTIC ===");
+    console.log(`- Recipient Email: ${recipientEmail.trim()}`);
+    console.log("- Full Payload:", JSON.stringify(payloadBody, null, 2));
+    console.log("===================================");
 
     const response = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
       method: "POST",
@@ -1050,30 +1047,27 @@ His Grace Nursery & Primary School
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("=== EMAILJS DIAGNOSTIC DISPATCH ERROR ===");
+      console.error("=== EMAILJS DISPATCH ERROR ===");
       console.error(`- HTTP Status: ${response.status}`);
       console.error(`- Error Body: ${errorText}`);
-      console.error(`- Service ID Tried: ${config.emailjsServiceId}`);
-      console.error(`- Template ID Tried: ${config.emailjsTemplateId}`);
-      console.error(`- Recipient Email Tried: ${recipientEmail}`);
-      console.error("=========================================");
+      console.error("==============================");
       throw new Error(`EmailJS check failed: ${errorText} (Status: ${response.status})`);
     }
 
     const resText = await response.text();
-    console.log("=== EMAILJS DIAGNOSTIC POST-SEND SUCCESS LOG ===");
-    console.log(`- HTTP Status: ${response.status}`);
-    console.log(`- Response Message: "${resText}"`);
-    console.log(`- Service ID Used: ${config.emailjsServiceId}`);
-    console.log(`- Template ID Used: ${config.emailjsTemplateId}`);
-    console.log(`- Recipient Email: ${recipientEmail}`);
-    console.log("================================================");
+    console.log("=== EMAILJS POST-SEND SUCCESS ===");
+    console.log(`- Response Status: ${response.status}`);
+    console.log(`- EmailJS Response Message: "${resText}"`);
+    console.log("=================================");
+
+    // Crucial user requirement: Display success message only after EmailJS confirms success
+    alert("Email successfully delivered using Direct EmailJS function");
 
     await logActivity(
       "Email Dispatched (EmailJS)",
       `Successfully transferred admission notification email to EmailJS relay for "${payload.studentName}" (${recipientEmail}). Response: ${resText}`
     );
-    return { success: true, provider: "EmailJS", details: `Delivered via active EmailJS API. Response: ${resText}` };
+    return { success: true, provider: "EmailJS", details: "Email successfully delivered using Direct EmailJS function", responseText: resText };
   } catch (err) {
     console.error("EmailJS dispatch failed:", err);
     await logActivity(
@@ -1129,7 +1123,7 @@ export const sendRejectionNotification = async (recipientEmail, recipientPhone, 
         admission_number: "REJECTED",
         username: "N/A",
         password: "N/A",
-        portal_url: window.location.origin,
+        portal_url: "https://peterdavididowu1-commits.github.io/His-Grace-School-Agbugburu-/login.html",
         parent_phone: recipientPhone || "N/A",
         date_time: dateStr,
         message: messageContent
