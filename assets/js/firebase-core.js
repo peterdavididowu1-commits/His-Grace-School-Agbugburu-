@@ -503,18 +503,7 @@ export const loginAdministrator = async (email, password) => {
   try {
     // 1. Authenticate with Firebase Authentication
     console.log(`- Step 1: Requesting credentials verification from Firebase Auth for ${sanitizedEmail}...`);
-    let authResult;
-    try {
-      authResult = await sdkAuth.signInWithEmailAndPassword(auth, sanitizedEmail, password);
-    } catch (signInErr) {
-      if (sanitizedEmail === "hisgraceschool.name.ng@gmail.com" && password === "Admin2026" && 
-          (signInErr.code === 'auth/user-not-found' || signInErr.code === 'auth/invalid-credential' || signInErr.code === 'auth/invalid-login-credentials' || signInErr.code === 'auth/user-disabled')) {
-        console.log(`- Master admin user does not exist or has invalid credentials in Firebase Auth. Provisioning master admin account in auth...`);
-        authResult = await sdkAuth.createUserWithEmailAndPassword(auth, sanitizedEmail, password);
-      } else {
-        throw signInErr;
-      }
-    }
+    const authResult = await sdkAuth.signInWithEmailAndPassword(auth, sanitizedEmail, password);
     const user = authResult.user;
     const uid = user.uid;
     console.log(`- Step 1 Success! Authenticated user UID: ${uid}`);
