@@ -2352,6 +2352,10 @@ Log in to check term report cards.`;
         }, (err) => {
           console.error("☠️ [Admin Dashboard] Real-time Messages subscription failed:", err);
         });
+      }, () => {
+        console.warn("🔐 [Admin Dashboard] Session is unauthenticated or invalid in Firebase Auth SDK. Redirecting to login page...");
+        localStorage.setItem('hgs_session', 'null');
+        window.location.replace('admin-login.html');
       });
     });
   </script>

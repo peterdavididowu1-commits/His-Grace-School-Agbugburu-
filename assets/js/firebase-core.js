@@ -25,13 +25,24 @@ try {
   // Sync SDK user state with local administrator session if active
   sdkAuth.onAuthStateChanged(auth, async (user) => {
     const activeSession = localStorage.getItem('hgs_session');
-    if (!user && activeSession && activeSession !== 'null') {
+    if (user && (!activeSession || activeSession === 'null')) {
       try {
-        console.log("🔄 [Firebase Core] Syncing SDK auth state with active localStorage session...");
-        await sdkAuth.signInWithEmailAndPassword(auth, "hisgraceschool.name.ng@gmail.com", "Admin2026");
-        console.log("🌟 [Firebase Core] SDK Auth state synchronized successfully!");
+        console.log("🔄 [Firebase Core] Syncing local session with active SDK auth state...");
+        const docRef = sdkFirestore.doc(db, "hgs_administrators", user.uid);
+        const docSnap = await sdkFirestore.getDoc(docRef);
+        if (docSnap.exists()) {
+          const profile = docSnap.data();
+          const sessionObj = {
+            uid: user.uid,
+            email: profile.email || user.email,
+            fullName: profile.fullName || "Administrator",
+            role: profile.role || "Registrar"
+          };
+          localStorage.setItem('hgs_session', JSON.stringify(sessionObj));
+          console.log("🌟 [Firebase Core] Local session fully synchronized with active SDK user successfully!");
+        }
       } catch (err) {
-        console.error("❌ [Firebase Core] Failed to sync SDK auth state with active local session:", err);
+        console.error("❌ [Firebase Core] Failed to sync local session with active SDK state:", err);
       }
     }
   });
@@ -44,10 +55,10 @@ export const getFirebaseInitError = () => firebaseInitError;
 export const hasInitializedSuccessfully = () => db !== null && auth !== null;
 
 // Helper to wait until authentication state is fully established
-export const onAdminAuthReady = (callback) => {
+export const onAdminAuthReady = (callback, onUnauthenticated) => {
   if (!auth) {
     console.log("⏳ [Firebase Core] Auth SDK not yet ready. Retrying in 100ms...");
-    setTimeout(() => onAdminAuthReady(callback), 100);
+    setTimeout(() => onAdminAuthReady(callback, onUnauthenticated), 100);
     return;
   }
   sdkAuth.onAuthStateChanged(auth, (user) => {
@@ -55,7 +66,10 @@ export const onAdminAuthReady = (callback) => {
       console.log("👤 [Firebase Core] onAdminAuthReady triggered: Auth is confirmed active for UID:", user.uid);
       callback(user);
     } else {
-      console.log("👤 [Firebase Core] orAdminAuthReady state: Unauthenticated or waiting...");
+      console.log("👤 [Firebase Core] onAdminAuthReady state: Unauthenticated...");
+      if (onUnauthenticated) {
+        onUnauthenticated();
+      }
     }
   });
 };
@@ -459,6 +473,16 @@ export const createAdministrator = async (email, password, fullName) => {
     // Save metadata securely using Firestore (mapping uid to doc reference)
     const docRef = sdkFirestore.doc(db, "hgs_administrators", uid);
     await sdkFirestore.setDoc(docRef, { ...profile, uid });
+
+    // Establish active localStorage session
+    const sessionObj = {
+      uid: uid,
+      email: profile.email,
+      fullName: profile.fullName,
+      role: profile.role || "Registrar"
+    };
+    localStorage.setItem('hgs_session', JSON.stringify(sessionObj));
+
     return { success: true, uid };
   } catch (err) {
     console.error("Firebase createAdministrator failed:", err);
