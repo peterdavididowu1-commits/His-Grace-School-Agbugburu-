@@ -867,41 +867,59 @@ export const approveAdmission = async (admissionId, operatorName = "Registrar") 
     throw new Error("Admission application record not found.");
   }
 
-  // 1. Update application status in database
-  await updateAdmission(admissionId, { status: "Approved" });
-
-  // 2. Automatically generate unique admission number
+  // Automatically generate unique admission number sequentially
   const students = await getStudents();
   let uniqueNum = "";
   let isUnique = false;
   let attempts = 0;
-  while (!isUnique && attempts < 50) {
-    const randomDigits = Math.floor(1000 + Math.random() * 9000); // 4 digit
-    uniqueNum = `HGS-2026-${randomDigits}`;
+  const count = students.length + 1;
+  while (!isUnique && attempts < 100) {
+    const idxStr = String(count + attempts).padStart(4, '0');
+    uniqueNum = `HGS2026-${idxStr}`;
     isUnique = !students.some(s => s.admissionNumber === uniqueNum);
     attempts++;
   }
 
-  // 3. Generate secure temporary password
-  const tempPassword = generateTempPassword();
+  // Generate secure temporary password
+  const tempPassword = `Temp${Math.floor(10000 + Math.random() * 90000)}`;
+  const portalUrl = "https://peterdavididowu1-commits.github.io/His-Grace-School-Agbugburu-/login.html";
+  const schoolWeb = "https://peterdavididowu1-commits.github.io/His-Grace-School-Agbugburu-/";
+
+  // 1 & 2. Save values into the student's Firestore admission record before sending the email.
+  const admissionUpdateData = {
+    status: "Approved",
+    admissionNumber: uniqueNum,
+    username: uniqueNum,
+    password: tempPassword,
+    studentName: targetApplication.studentName || targetApplication.fullName || "Pupil",
+    portalLink: portalUrl
+  };
+  await updateAdmission(admissionId, admissionUpdateData);
 
   const emailInfo = getRecipientEmail(targetApplication);
   const recipientEmail = emailInfo.email;
+  const fullName = targetApplication.studentName || targetApplication.fullName || "Pupil";
 
   // 4. Create standard student entity payload (saving both parentEmail and guardianEmail to be robust)
   const studentPayload = {
     admissionNumber: uniqueNum,
-    studentName: targetApplication.studentName,
+    username: uniqueNum,
+    studentName: fullName,
+    fullName: fullName,
     gender: targetApplication.studentGender || "Male",
     dob: targetApplication.studentDob || "",
     gradeApplying: targetApplication.gradeApplying || "Primary 1",
-    parentName: targetApplication.parentName,
-    parentPhone: targetApplication.parentPhone,
+    class: targetApplication.gradeApplying || "Primary 1",
+    parentName: targetApplication.parentName || "Unspecified Parent",
+    parentPhone: targetApplication.parentPhone || "N/A",
     parentEmail: recipientEmail,
     guardianEmail: recipientEmail, 
+    email: recipientEmail,
+    portalLink: portalUrl,
     homeAddress: targetApplication.homeAddress || "",
     password: tempPassword,
     status: 'Active',
+    createdAt: new Date().toISOString(),
     grades: {
       english: 85,
       math: 85,
@@ -909,32 +927,36 @@ export const approveAdmission = async (admissionId, operatorName = "Registrar") 
       civic: 85,
       agriculture: 85
     },
-    coachRemarks: `Account automatically formulated and approved by the registrar on ${new Date().toLocaleDateString()}. System onboarding sequence initialized.`
+    coachRemarks: `Account automatically formulated and approved on ${new Date().toLocaleDateString()}. System onboarding sequence initialized.`
   };
 
+  // Add to hgs_students
   await saveStudent(studentPayload);
+  
+  // Add to students collection for absolute runtime compatibility
+  try {
+    const studentsCol = sdkFirestore.collection(db, "students");
+    await sdkFirestore.addDoc(studentsCol, studentPayload);
+  } catch (err) {
+    console.warn("Adding to legacy students collection failed:", err);
+  }
 
   // 5. Build notifications payloads
-  const portalUrl = "https://peterdavididowu1-commits.github.io/His-Grace-School-Agbugburu-/login.html";
-  const notificationContent = {
-    studentName: targetApplication.studentName,
-    admissionNumber: uniqueNum,
-    username: uniqueNum,
-    password: tempPassword,
-    portalUrl: portalUrl,
-    guardianPhone: targetApplication.parentPhone,
-    guardianEmail: recipientEmail
+  const emailPayloadObj = {
+    student_name: fullName,
+    admission_number: uniqueNum,
+    student_username: uniqueNum,
+    student_password: tempPassword,
+    portal_link: portalUrl,
+    school_website: schoolWeb
   };
 
   // 6. Send live Email alert automatically (SMS is temporarily disabled)
   if (!recipientEmail) {
     console.warn("[Approval Notification] guardianEmail / recipient email is empty, skipping email dispatch.");
   } else {
-    await sendEmailNotification(
-      recipientEmail,
-      `Admission Approved: ${targetApplication.studentName} (${uniqueNum})`,
-      notificationContent
-    );
+    const subject = "Congratulations! Your Admission Has Been Approved";
+    await sendEmailNotification(recipientEmail, subject, emailPayloadObj);
   }
   console.log(`[SMS System] Outbound SMS for admission approval of "${targetApplication.studentName}" is skipped (SMS temporarily disabled).`);
 
@@ -1146,34 +1168,9 @@ export const sendEmailNotification = async (recipientEmail, subject, payload, co
   }
 
   const portalUrlFixed = "https://peterdavididowu1-commits.github.io/His-Grace-School-Agbugburu-/login.html";
+  const webUrlFixed = "https://peterdavididowu1-commits.github.io/His-Grace-School-Agbugburu-/";
 
   const config = configOverride || await fetchGlobalEmailSettings();
-  const dateStr = new Date().toLocaleDateString();
-  const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-  // Fallback structure in case payload.message is empty or custom credentials text is needed
-  const textBody = payload.message || `
-Dear Guardian,
-
-We are delighted to inform you that the school registration request for "${payload.studentName}" has been APPROVED by His Grace Nursery & Primary School Registry Council on ${dateStr} @ ${timeStr}!
-
-A pupil portal card has been provisioned on our registers. Please find your active credentials below:
-
-- Student Portal URL: ${portalUrlFixed}
-- Entry Username: ${payload.username} (Admission Number)
-- Secure Entry Password: ${payload.password}
-
-Please log in to inspect your dynamic performance reporting cards, grades, term assessments, and tutor instructions.
-
-Warm Regards,
-Registrar General
-His Grace Nursery & Primary School
-  `.trim();
-
-  await logActivity(
-    "Outbound Email Formulated",
-    `Compiled email dispatch card for "${payload.studentName}". Target Email: ${recipientEmail}.`
-  );
 
   const isConfigInvalid = !config.emailjsServiceId || 
                            !config.emailjsTemplateId || 
@@ -1189,6 +1186,78 @@ His Grace Nursery & Primary School
     throw new Error("EmailJS is not configured. Please enter Service ID, Template ID, and Public Key in Email Configuration.");
   }
 
+  // Resolve variables
+  let studentNameVal = "Pupil";
+  let admissionNo = "";
+  let userVal = "";
+  let passVal = "";
+  let linkVal = portalUrlFixed;
+  let schoolWebVal = webUrlFixed;
+
+  if (payload && typeof payload === "object") {
+    studentNameVal = payload.student_name || payload.studentName || "Pupil";
+    admissionNo = payload.admission_number || payload.admissionNumber || "";
+    userVal = payload.student_username || payload.username || "";
+    passVal = payload.student_password || payload.password || "";
+    linkVal = payload.portal_link || payload.portalUrl || payload.portal_url || linkVal;
+    if (payload.school_website) {
+      schoolWebVal = payload.school_website;
+    }
+  } else if (typeof payload === "string") {
+    const matchAdm = payload.match(/Admission Number:\s*([^\n\r]+)/i);
+    if (matchAdm) admissionNo = matchAdm[1].trim();
+    const matchPass = payload.match(/Password:\s*([^\n\r]+)/i) || payload.match(/Secure Entry Password:\s*([^\n\r]+)/i);
+    if (matchPass) passVal = matchPass[1].trim();
+    userVal = admissionNo;
+  }
+
+  // 8. Before sending the email, validate that:
+  // - admission_number exists
+  // - student_username exists
+  // - student_password exists
+  // - portal_link exists
+  // If any value is missing, stop the email process and display an error.
+  if (!admissionNo || admissionNo.trim() === "") {
+    throw new Error("EmailJS dispatch aborted: Required 'admission_number' value is missing or blank.");
+  }
+  if (!userVal || userVal.trim() === "") {
+    throw new Error("EmailJS dispatch aborted: Required 'student_username' value is missing or blank.");
+  }
+  if (!passVal || passVal.trim() === "") {
+    throw new Error("EmailJS dispatch aborted: Required 'student_password' value is missing or blank.");
+  }
+  if (!linkVal || linkVal.trim() === "") {
+    throw new Error("EmailJS dispatch aborted: Required 'portal_link' value is missing or blank.");
+  }
+
+  // Email Body construction matching exactly the requested format (Requirements section 7)
+  const exactBodyText = `Dear ${studentNameVal},
+
+Congratulations.
+
+Your application to His Grace School has been approved.
+
+Admission Number:
+${admissionNo}
+
+Username:
+${userVal}
+
+Password:
+${passVal}
+
+Student Portal:
+${linkVal}
+
+School Website:
+${schoolWebVal}
+
+Please keep these credentials safe and use them to access your student portal.
+
+Regards,
+
+His Grace School Registry`;
+
   const payloadBody = {
     service_id: config.emailjsServiceId,
     template_id: config.emailjsTemplateId,
@@ -1196,21 +1265,30 @@ His Grace Nursery & Primary School
     template_params: {
       subject: subject,
       recipient_email: recipientEmail.trim(),
-      to_email: recipientEmail.trim(), // Standard parameter compatibility
-      email: recipientEmail.trim(), // Map guardianEmail to the variable named 'email'
+      to_email: recipientEmail.trim(),
+      email: recipientEmail.trim(),
       guardianEmail: recipientEmail.trim(),
-      student_name: payload.studentName,
-      admission_number: payload.admissionNumber || "N/A",
-      username: payload.username || "N/A",
-      password: payload.password || "N/A",
-      portal_url: portalUrlFixed,
-      parent_phone: payload.guardianPhone || "N/A",
-      date_time: `${dateStr} ${timeStr}`,
-      message: textBody
+      
+      // Exact requested variables
+      student_name: studentNameVal,
+      admission_number: admissionNo,
+      student_username: userVal,
+      student_password: passVal,
+      portal_link: linkVal,
+      
+      // Legacy templates backup compatibility
+      username: userVal,
+      password: passVal,
+      admissionNumber: admissionNo,
+      studentName: studentNameVal,
+      portal_url: linkVal,
+
+      message: exactBodyText,
+      date_time: new Date().toLocaleString()
     }
   };
 
-  // Log to console: recipient email, payload, and later response
+  // 9. Log the complete EmailJS payload to the browser console before sending for debugging purposes
   console.log("=== EMAILJS DISPATCH INITIATION LOG ===");
   console.log(`- Recipient Email: ${recipientEmail.trim()}`);
   console.log("- Full Payload Parameters:", JSON.stringify(payloadBody, null, 2));
@@ -1241,7 +1319,7 @@ His Grace Nursery & Primary School
 
     await logActivity(
       "Email Dispatched (EmailJS)",
-      `Successfully transferred admission notification email to EmailJS relay for "${payload.studentName}" (${recipientEmail}). Response: ${resText}`
+      `Successfully transferred admission notification email to EmailJS relay for "${studentNameVal}" (${recipientEmail}). Response: ${resText}`
     );
     return { success: true, provider: "EmailJS", details: "Email successfully delivered using Direct EmailJS function", responseText: resText };
   } catch (err) {
