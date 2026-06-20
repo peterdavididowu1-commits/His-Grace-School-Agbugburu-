@@ -152,7 +152,7 @@
     <div class="portal-banner">
       <div>
         <span class="profile-badge"><i class="fa-solid fa-child"></i> Verified Pupil Profile</span>
-        <h2 style="font-size: 2rem; font-weight: 800; margin-top: 0.5rem; letter-spacing: -0.01em;">Welcome back, <span id="studentPortalName">Adebayo Daniel</span>!</h2>
+        <h2 style="font-size: 2rem; font-weight: 800; margin-top: 0.5rem; letter-spacing: -0.01em;">Welcome back, <span id="studentPortalName">...</span>!</h2>
         <p style="opacity: 0.9; margin-top: 0.25rem;">Nursery & Primary School Student Learning Console.</p>
       </div>
       <div>
@@ -166,15 +166,18 @@
       <aside class="portal-sidebar">
         <div class="text-center" style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1.5rem;">
           <img src="assets/images/logo.jpg" alt="Student avatar placeholder" style="width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 0.75rem auto; border: 3px solid var(--primary);">
-          <h4 style="font-size: 1.1rem; color: var(--primary); font-weight: 700;" id="sidebarName">Adebayo Daniel</h4>
-          <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0.15rem 0;" id="studentAdmissionNumber">Admission Number: HGS-2026-001</p>
-          <span class="badge" style="font-size: 0.7rem; margin-top: 0.25rem;" id="studentClassBadge">Primary Grade 1</span>
+          <h4 style="font-size: 1.1rem; color: var(--primary); font-weight: 700;" id="sidebarName">...</h4>
+          <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0.15rem 0;" id="studentAdmissionNumber">Admission Number: ...</p>
+          <span class="badge" style="font-size: 0.7rem; margin-top: 0.25rem;" id="studentClassBadge">...</span>
         </div>
         
         <h5 style="text-transform: uppercase; font-size: 0.75rem; color: var(--text-muted); font-weight: 800; letter-spacing: 0.05em; padding-left: 0.75rem;">Interactive Panel</h5>
         <ul class="portal-menu">
           <li class="portal-menu-item active" data-target="feed">
             <a href="#"><i class="fa-solid fa-bullhorn" style="width: 20px;"></i> School Noticeboard</a>
+          </li>
+          <li class="portal-menu-item" data-target="profile">
+            <a href="#"><i class="fa-solid fa-id-card" style="width: 20px;"></i> My Profile</a>
           </li>
           <li class="portal-menu-item" data-target="grades">
             <a href="#"><i class="fa-solid fa-square-poll-vertical" style="width: 20px;"></i> Termly Report Sheet</a>
@@ -218,6 +221,59 @@
               <h4 style="color: var(--secondary); font-size: 1.05rem; font-weight: 700; margin-bottom: 0.5rem;">Admission Portals for New Term Now Active Online</h4>
               <p style="font-size: 0.9rem; color: var(--text-dark); line-height: 1.5;">We have officially activated our new online Smart Enrollment application system for admissions. Parents wishing to register active child bookings (including Creche, Montessori Nursery, and Primary Grade divisions) are instructed to direct their friends to click 'Apply Online Now' on the main homepage. No physically written documents are required during initial bookings.</p>
               <span class="badge" style="font-size: 0.7rem; margin-top: 0.75rem; background-color: #dcfce7; color: var(--secondary); text-transform: capitalize;">General Update</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==========================================
+             SECTION PROFILING: MY PROFILE
+             ========================================== -->
+        <section id="portal-profile" class="portal-section">
+          <h3 style="font-size: 1.25rem; color: var(--primary); margin-bottom: 1.25rem; font-weight: 800;"><i class="fa-solid fa-id-card" style="color: var(--accent);"></i> Verified Pupil Profile Details</h3>
+          
+          <div class="card" style="background-color: #ffffff; padding: 2rem; box-shadow: var(--shadow-sm); border: 1.5px solid var(--border-color);">
+            <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); flex-wrap: wrap;">
+              <img src="assets/images/logo.jpg" alt="Student profile avatar" style="width: 90px; height: 90px; border-radius: 50%; border: 3px solid var(--primary); object-fit: cover;">
+              <div>
+                <h4 style="font-size: 1.5rem; font-weight: 800; color: var(--primary);" id="profileFullName">...</h4>
+                <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 0.25rem;">Admission ID Key: <span id="profileAdmissionNumber" style="font-weight: 600; color: var(--text-dark);">HGS-XXXX-XXX</span></p>
+                <span class="badge" style="margin-top: 0.5rem; display: inline-block;" id="profileAdmissionStatus">...</span>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem;">
+              <div>
+                <h5 style="color: var(--primary); font-size: 0.95rem; margin-bottom: 1rem; border-bottom: 2px solid var(--primary-light); padding-bottom: 0.5rem; font-weight: 700;"><i class="fa-solid fa-user"></i> Personal Information</h5>
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                  <p style="font-size: 0.9rem; color: var(--text-dark); margin: 0;">
+                    <strong style="color: var(--text-muted);">Pupil Full Name:</strong> <span id="profileDetName" style="font-weight: 600; padding-left: 0.5rem;">-</span>
+                  </p>
+                  <p style="font-size: 0.9rem; color: var(--text-dark); margin: 0;">
+                    <strong style="color: var(--text-muted);">Gender Division:</strong> <span id="profileGender" style="font-weight: 600; padding-left: 0.5rem;">-</span>
+                  </p>
+                  <p style="font-size: 0.9rem; color: var(--text-dark); margin: 0;">
+                    <strong style="color: var(--text-muted);">Date of Birth:</strong> <span id="profileDOB" style="font-weight: 600; padding-left: 0.5rem;">-</span>
+                  </p>
+                  <p style="font-size: 0.9rem; color: var(--text-dark); margin: 0;">
+                    <strong style="color: var(--text-muted);">Class / Grade level:</strong> <span id="profileClass" style="font-weight: 600; padding-left: 0.5rem;">-</span>
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <h5 style="color: var(--primary); font-size: 0.95rem; margin-bottom: 1rem; border-bottom: 2px solid var(--primary-light); padding-bottom: 0.5rem; font-weight: 700;"><i class="fa-solid fa-users"></i> Parent & Guardian Details</h5>
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                  <p style="font-size: 0.9rem; color: var(--text-dark); margin: 0;">
+                    <strong style="color: var(--text-muted);">Sponsor Name:</strong> <span id="profileParentName" style="font-weight: 600; padding-left: 0.5rem;">-</span>
+                  </p>
+                  <p style="font-size: 0.9rem; color: var(--text-dark); margin: 0;">
+                    <strong style="color: var(--text-muted);">Emergency GSM Phone:</strong> <span id="profileParentPhone" style="font-weight: 600; padding-left: 0.5rem;">-</span>
+                  </p>
+                  <p style="font-size: 0.9rem; color: var(--text-dark); margin: 0;">
+                    <strong style="color: var(--text-muted);">Emergency Email Address:</strong> <span id="profileParentEmail" style="font-weight: 600; padding-left: 0.5rem;">-</span>
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -441,7 +497,7 @@
 
   <!-- Script Navigation bindings -->
   <script type="module">
-    import { getActiveStudentSession, logoutStudent, getStudents } from './assets/js/firebase-core.js';
+    import { getActiveStudentSession, logoutStudent, getStudents, getAdmissionByDocId, getAdmissionByNumber } from './assets/js/firebase-core.js';
 
     document.addEventListener('DOMContentLoaded', async () => {
       // 1. Session verification & Security Wall
@@ -451,36 +507,98 @@
         return;
       }
 
-      // 2. Fetch full student profile mapping
+      // 2. Fetch official admission record from hgs_admissions
+      let admissionRecord = null;
+      try {
+        const savedDocId = session.admissionDocId || localStorage.getItem('hgs_student_admission_doc_id');
+        if (savedDocId) {
+          admissionRecord = await getAdmissionByDocId(savedDocId);
+        }
+        
+        // Fallback by admission number if document ID search returned null
+        if (!admissionRecord && session.admissionNumber) {
+          admissionRecord = await getAdmissionByNumber(session.admissionNumber);
+        }
+      } catch (err) {
+        console.error("Error loading admission record:", err);
+      }
+
+      // 3. Strict security check: If the student record cannot be found in hgs_admissions, reject and exit
+      if (!admissionRecord) {
+        alert("Student record not found.");
+        logoutStudent();
+        window.location.replace('login.html');
+        return;
+      }
+
+      // Sync and persist retrieved credentials
+      if (admissionRecord.docId) {
+        localStorage.setItem('hgs_student_admission_doc_id', admissionRecord.docId);
+        if (session.admissionDocId !== admissionRecord.docId) {
+          session.admissionDocId = admissionRecord.docId;
+          localStorage.setItem('hgs_student_session', JSON.stringify(session));
+        }
+      }
+
+      // Fetch full student academic / report sheet mapping from hgs_students
       let studentProfile = null;
       try {
         const list = await getStudents();
-        studentProfile = list.find(item => item.id === session.id);
+        studentProfile = list.find(item => 
+          item.admissionNumber && item.admissionNumber.toUpperCase().trim() === admissionRecord.admissionNumber.toUpperCase().trim()
+        );
       } catch (err) {
-        console.error("Error loaded student records:", err);
+        console.error("Error loaded academic student records:", err);
       }
 
-      // Graceful fallback defaults if not found
+      // Graceful fallback defaults if report sheet isn't created yet
       if (!studentProfile) {
         studentProfile = {
-          studentName: session.studentName,
-          gradeApplying: session.gradeApplying,
-          admissionNumber: session.admissionNumber,
           grades: { english: 85, math: 88, computer: 80, civic: 92, agriculture: 75 },
-          coachRemarks: "No custom performance evaluation sheet submitted yet. Cooperating nicely."
+          coachRemarks: "No custom performance evaluation comments logged yet by the level instructor. Keep studying diligently!"
         };
       }
 
-      // Populate layout parameters
+      // 4. Populate Header & Sidebar Layout Parameters
       const portalNameEl = document.getElementById('studentPortalName');
       const sideNameEl = document.getElementById('sidebarName');
       const classBadgeEl = document.getElementById('studentClassBadge');
       const admNumEl = document.getElementById('studentAdmissionNumber');
 
-      if (portalNameEl) portalNameEl.textContent = studentProfile.studentName;
-      if (sideNameEl) sideNameEl.textContent = studentProfile.studentName;
-      if (classBadgeEl) classBadgeEl.textContent = studentProfile.gradeApplying || 'Primary 1';
-      if (admNumEl) admNumEl.textContent = `Admission ID: ${studentProfile.admissionNumber}`;
+      if (portalNameEl) portalNameEl.textContent = admissionRecord.studentName;
+      if (sideNameEl) sideNameEl.textContent = admissionRecord.studentName;
+      if (classBadgeEl) classBadgeEl.textContent = admissionRecord.gradeApplying || 'Primary 1';
+      if (admNumEl) admNumEl.textContent = `Admission ID: ${admissionRecord.admissionNumber}`;
+
+      // 5. Populate Student Profile Tab Details in Real-Time
+      const pFullName = document.getElementById('profileFullName');
+      const pAdmissionNumber = document.getElementById('profileAdmissionNumber');
+      const pAdmissionStatus = document.getElementById('profileAdmissionStatus');
+      const pDetName = document.getElementById('profileDetName');
+      const pGender = document.getElementById('profileGender');
+      const pDOB = document.getElementById('profileDOB');
+      const pClass = document.getElementById('profileClass');
+      const pParentName = document.getElementById('profileParentName');
+      const pParentPhone = document.getElementById('profileParentPhone');
+      const pParentEmail = document.getElementById('profileParentEmail');
+
+      if (pFullName) pFullName.textContent = admissionRecord.studentName;
+      if (pAdmissionNumber) pAdmissionNumber.textContent = admissionRecord.admissionNumber;
+      if (pAdmissionStatus) {
+        pAdmissionStatus.textContent = admissionRecord.status || 'Active';
+        if (admissionRecord.status === 'Approved') {
+          pAdmissionStatus.style.cssText = 'background-color: #dcfce7; color: var(--secondary); font-weight: 700; font-size: 0.8rem; padding: 0.25rem 0.75rem; border-radius: 50px;';
+        } else {
+          pAdmissionStatus.style.cssText = 'background-color: #eff6ff; color: var(--primary); font-weight: 700; font-size: 0.8rem; padding: 0.25rem 0.75rem; border-radius: 50px;';
+        }
+      }
+      if (pDetName) pDetName.textContent = admissionRecord.studentName;
+      if (pGender) pGender.textContent = admissionRecord.studentGender || 'N/A';
+      if (pDOB) pDOB.textContent = admissionRecord.studentDob || 'N/A';
+      if (pClass) pClass.textContent = admissionRecord.gradeApplying || 'Primary 1';
+      if (pParentName) pParentName.textContent = admissionRecord.parentName || 'N/A';
+      if (pParentPhone) pParentPhone.textContent = admissionRecord.parentPhone || 'N/A';
+      if (pParentEmail) pParentEmail.textContent = admissionRecord.parentEmail || 'N/A';
 
       // Calculate aggregated averages
       const g = studentProfile.grades || { english: 0, math: 0, computer: 0, civic: 0, agriculture: 0 };

@@ -781,12 +781,26 @@ export const loginStudent = async (admissionNumber, password) => {
     throw new Error("This student portal account is currently Deactivated by School Admin. Please contact registry desk.");
   }
 
+  // Locate the matching admission record in hgs_admissions
+  if (!db) throw new Error("Firestore database is not initialized.");
+  const adColRef = sdkFirestore.collection(db, "hgs_admissions");
+  const adQuery = sdkFirestore.query(adColRef, sdkFirestore.where("admissionNumber", "==", student.admissionNumber));
+  const adSnapshot = await sdkFirestore.getDocs(adQuery);
+
+  if (adSnapshot.empty) {
+    throw new Error("Student record not found.");
+  }
+
+  const admissionDocId = adSnapshot.docs[0].id;
+  localStorage.setItem('hgs_student_admission_doc_id', admissionDocId);
+
   const sessionObj = {
     id: student.id,
     admissionNumber: student.admissionNumber,
     studentName: student.studentName,
     gradeApplying: student.gradeApplying || 'Primary 1',
     status: student.status,
+    admissionDocId: admissionDocId,
     role: "Student"
   };
 
@@ -796,6 +810,7 @@ export const loginStudent = async (admissionNumber, password) => {
 
 export const logoutStudent = () => {
   localStorage.setItem('hgs_student_session', 'null');
+  localStorage.removeItem('hgs_student_admission_doc_id');
 };
 
 export const getActiveStudentSession = () => {
@@ -806,6 +821,27 @@ export const getActiveStudentSession = () => {
     } catch (e) {
       return null;
     }
+  }
+  return null;
+};
+
+export const getAdmissionByDocId = async (docId) => {
+  if (!db) throw new Error("Firestore database is not initialized.");
+  const docRef = sdkFirestore.doc(db, "hgs_admissions", docId);
+  const docSnap = await sdkFirestore.getDoc(docRef);
+  if (docSnap.exists()) {
+    return { ...docSnap.data(), docId: docSnap.id };
+  }
+  return null;
+};
+
+export const getAdmissionByNumber = async (admissionNumber) => {
+  if (!db) throw new Error("Firestore database is not initialized.");
+  const colRef = sdkFirestore.collection(db, "hgs_admissions");
+  const q = sdkFirestore.query(colRef, sdkFirestore.where("admissionNumber", "==", admissionNumber));
+  const snapshot = await sdkFirestore.getDocs(q);
+  if (!snapshot.empty) {
+    return { ...snapshot.docs[0].data(), docId: snapshot.docs[0].id };
   }
   return null;
 };
