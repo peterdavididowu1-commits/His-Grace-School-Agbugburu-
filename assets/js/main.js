@@ -248,7 +248,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const submitBtn = loginForm.querySelector('button[type="submit"]');
       const origText = submitBtn.innerHTML;
       
-      const role = document.getElementById('portalRole').value;
+      const roleEl = document.getElementById('portalRole');
+      const role = roleEl ? roleEl.value : 'Student';
       const portalIdStr = document.getElementById('portalId').value.trim();
       const portalPassword = document.getElementById('portalPassword').value;
 
