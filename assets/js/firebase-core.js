@@ -1056,7 +1056,7 @@ export const approveAdmission = async (admissionId, operatorName = "Registrar") 
 
   // Generate secure temporary password
   const tempPassword = `Temp${Math.floor(10000 + Math.random() * 90000)}`;
-  const portalUrl = "https://peterdavididowu1-commits.github.io/His-Grace-School-Agbugburu-/login.html";
+  const portalUrl = "https://peterdavididowu1-commits.github.io/His-Grace-School-Agbugburu-/student-portal-v2.html";
   const schoolWeb = "https://peterdavididowu1-commits.github.io/His-Grace-School-Agbugburu-/";
 
   // 1 & 2. Save values into the student's Firestore admission record before sending the email.
@@ -1210,7 +1210,7 @@ export const resendStudentCredentials = async (studentId, operatorName = "Regist
     throw new Error("The recipient's email address (guardianEmail) is empty. Unable to resend credentials via email. Please configure an email address first.");
   }
 
-  const portalUrl = "https://peterdavididowu1-commits.github.io/His-Grace-School-Agbugburu-/login.html";
+  const portalUrl = "https://peterdavididowu1-commits.github.io/His-Grace-School-Agbugburu-/student-portal-v2.html";
   const notificationContent = {
     studentName: student.studentName,
     admissionNumber: student.admissionNumber,
@@ -1341,7 +1341,7 @@ export const sendEmailNotification = async (recipientEmail, subject, payload, co
     throw new Error("Aborted: Recipient address (guardianEmail) is empty. Dispatch canceled.");
   }
 
-  const portalUrlFixed = "https://peterdavididowu1-commits.github.io/His-Grace-School-Agbugburu-/login.html";
+  const portalUrlFixed = "https://peterdavididowu1-commits.github.io/His-Grace-School-Agbugburu-/student-portal-v2.html";
   const webUrlFixed = "https://peterdavididowu1-commits.github.io/His-Grace-School-Agbugburu-/";
 
   const config = configOverride || await fetchGlobalEmailSettings();

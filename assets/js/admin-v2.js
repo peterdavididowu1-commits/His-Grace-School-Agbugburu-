@@ -214,7 +214,7 @@ export const sendEmailNotification = async (recipientEmail, subject, payload, st
     let admissionNo = "";
     let userVal = "";
     let passVal = "";
-    let linkVal = "https://peterdavididowu1-commits.github.io/His-Grace-School-Agbugburu-/login.html";
+    let linkVal = "https://peterdavididowu1-commits.github.io/His-Grace-School-Agbugburu-/student-portal-v2.html";
     let schoolWebVal = "https://peterdavididowu1-commits.github.io/His-Grace-School-Agbugburu-/";
 
     let finalBodyText = "";
@@ -568,7 +568,7 @@ export const approveAdmission = async (admissionId, applicantEmail) => {
     }
 
     const tempPassword = `Temp${Math.floor(10000 + Math.random() * 90000)}`;
-    const portalUrl = "https://peterdavididowu1-commits.github.io/His-Grace-School-Agbugburu-/login.html";
+    const portalUrl = "https://peterdavididowu1-commits.github.io/His-Grace-School-Agbugburu-/student-portal-v2.html";
     const webUrl = "https://peterdavididowu1-commits.github.io/His-Grace-School-Agbugburu-/";
 
     // 1 & 2. Save values into the student's Firestore admission record before sending the email.
