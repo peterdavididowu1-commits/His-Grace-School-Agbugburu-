@@ -725,6 +725,23 @@ export const getStudents = async () => {
   }
 };
 
+export const getStudentProfileByAdmission = async (admissionNumber) => {
+  try {
+    if (!db) throw new Error("Firestore database is not initialized.");
+    const colRef = sdkFirestore.collection(db, "hgs_students");
+    const q = sdkFirestore.query(colRef, sdkFirestore.where("admissionNumber", "==", admissionNumber));
+    const snapshot = await sdkFirestore.getDocs(q);
+    if (!snapshot.empty) {
+      const doc = snapshot.docs[0];
+      return { ...doc.data(), docId: doc.id };
+    }
+    return null;
+  } catch (err) {
+    console.error("Firestore getStudentProfileByAdmission failed:", err);
+    throw err;
+  }
+};
+
 export const updateStudent = async (id, updatedFields) => {
   try {
     const colRef = sdkFirestore.collection(db, "hgs_students");

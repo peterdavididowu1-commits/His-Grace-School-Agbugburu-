@@ -174,8 +174,8 @@
           <li class="portal-menu-item active" data-target="feed" id="feedBtn">
             <a href="#"><i class="fa-solid fa-bullhorn" style="width: 20px;"></i> School Noticeboard</a>
           </li>
-          <li class="portal-menu-item" data-target="profile" id="profileBtn">
-            <a href="#"><i class="fa-solid fa-id-card" style="width: 20px;"></i> My Profile</a>
+          <li class="portal-menu-item" id="profileBtn">
+            <a href="student-profile.html"><i class="fa-solid fa-id-card" style="width: 20px;"></i> Student Profile</a>
           </li>
           <li class="portal-menu-item" data-target="grades">
             <a href="#"><i class="fa-solid fa-square-poll-vertical" style="width: 20px;"></i> Termly Report Sheet</a>
@@ -493,6 +493,19 @@
         return;
       }
 
+      // Immediately populate UI with session data to prevent "...!" display delay
+      const immediatePortalNameEl = document.getElementById('studentPortalName');
+      const immediateSideNameEl = document.getElementById('sidebarName');
+      const immediateClassBadgeEl = document.getElementById('studentClassBadge');
+      const immediateAdmNumEl = document.getElementById('studentAdmissionNumber');
+
+      if (session) {
+        if (immediatePortalNameEl) immediatePortalNameEl.textContent = session.studentName || 'Student';
+        if (immediateSideNameEl) immediateSideNameEl.textContent = session.studentName || 'Student';
+        if (immediateClassBadgeEl) immediateClassBadgeEl.textContent = session.gradeApplying || 'Primary 1';
+        if (immediateAdmNumEl) immediateAdmNumEl.textContent = `Admission Number: ${session.admissionNumber || '...'}`;
+      }
+
       // 2. State & Data Variables
       let admissionRecord = null;
       let studentProfile = null;
@@ -791,38 +804,8 @@
       }
 
       function openStudentProfile(e) {
-        console.log('Profile button clicked');
         if (e) e.preventDefault();
-
-        // 1. Reset all sections
-        const sections = document.querySelectorAll('.portal-section');
-        sections.forEach(sec => {
-          sec.style.display = 'none';
-          sec.classList.remove('active');
-        });
-
-        // 2. Hide noticeboardView specifically
-        const noticeboardView = document.getElementById('noticeboardView');
-        if (noticeboardView) {
-          noticeboardView.style.display = 'none';
-        }
-
-        // 3. Show profileView specifically
-        const profileView = document.getElementById('profileView');
-        if (profileView) {
-          profileView.style.display = 'block';
-          profileView.classList.add('active');
-        }
-
-        // 4. Toggle active menu highlight
-        const menuItems = document.querySelectorAll('.portal-menu-item');
-        menuItems.forEach(mi => mi.classList.remove('active'));
-        const profileBtn = document.getElementById('profileBtn');
-        if (profileBtn) profileBtn.classList.add('active');
-
-        closeMobileMenu();
-
-        loadStudentProfile();
+        window.location.href = 'student-profile.html';
       }
 
       // Make openStudentProfile and loadStudentProfile globally inspectable/callable
@@ -919,6 +902,20 @@
           mobileMenu.classList.toggle('active');
           mobileToggle.classList.toggle('open');
         });
+      }
+
+      // Tab Parameter Auto-select from URL search params
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const activeTab = urlParams.get('tab');
+        if (activeTab) {
+          const matchingBtn = document.querySelector(`.portal-menu-item[data-target="${activeTab}"]`);
+          if (matchingBtn) {
+            matchingBtn.click();
+          }
+        }
+      } catch (paramErr) {
+        console.error("Error reading URL search parameters for tab selection:", paramErr);
       }
 
       // Logout handler
