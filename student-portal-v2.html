@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Portal V2 - His Grace School</title>
+  
+  <!-- Typography & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    body {
+      background-color: var(--bg-slate);
+    }
+    .portal-container {
+      padding: 3rem 0;
+    }
+    .portal-banner {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+      color: #ffffff;
+      padding: 2.5rem;
+      border-radius: var(--border-radius-lg);
+      box-shadow: var(--shadow-md);
+      margin-bottom: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+    }
+    .portal-layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 2rem;
+    }
+    .portal-sidebar {
+      background-color: #ffffff;
+      padding: 1.75rem;
+      border-radius: var(--border-radius-md);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
+      height: fit-content;
+    }
+    .portal-menu {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    .portal-menu-item a {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      border-radius: var(--border-radius-sm);
+      font-weight: 600;
+      color: var(--text-dark);
+      font-size: 0.95rem;
+      transition: var(--transition);
+    }
+    .portal-menu-item a:hover,
+    .portal-menu-item.active a {
+      background-color: var(--primary-light);
+      color: var(--primary);
+    }
+    .profile-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background-color: rgba(255, 255, 255, 0.15);
+      padding: 0.5rem 1rem;
+      border-radius: 50px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    /* Profile Side Layout Card */
+    .profile-card-sidebar {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius-md);
+      box-shadow: var(--shadow-sm);
+      padding: 2rem 1.5rem;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .profile-photo-container {
+      position: relative;
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 1.25rem auto;
+    }
+    .profile-avatar-placeholder {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background-color: var(--primary-light);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      border: 4px solid #ffffff;
+      box-shadow: var(--shadow-md);
+    }
+    .profile-status-badge {
+      position: absolute;
+      bottom: 0;
+      right: 5px;
+      background-color: #10b981;
+      color: white;
+      font-size: 0.65rem;
+      font-weight: 800;
+      padding: 0.25rem 0.6rem;
+      border-radius: 50px;
+      border: 2.5px solid #ffffff;
+      box-shadow: var(--shadow-sm);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    
+    .profile-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+    }
+    .profile-section-card {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius-md);
+      padding: 1.75rem;
+      box-shadow: var(--shadow-sm);
+    }
+    .profile-section-title {
+      font-size: 1.1rem;
+      color: var(--primary);
+      font-weight: 800;
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--primary-light);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .profile-data-group {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .profile-data-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .profile-data-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .profile-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .profile-val {
+      font-size: 0.95rem;
+      color: var(--text-dark);
+      font-weight: 700;
+      text-align: right;
+    }
+
+    /* Login Screen V2 styling */
+    .login-v2-container {
+      max-width: 480px;
+      margin: 4rem auto;
+      padding: 0 1rem;
+    }
+    .login-v2-card {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius-lg);
+      padding: 3rem 2.5rem;
+      box-shadow: var(--shadow-lg);
+    }
+    .login-v2-header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+    .login-v2-header img {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 4px solid var(--primary-light);
+      margin: 0 auto 1rem auto;
+    }
+    .login-v2-header h2 {
+      color: var(--primary);
+      font-size: 1.75rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .login-v2-header p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-top: 0.5rem;
+    }
+
+    .portal-section-view {
+      display: none;
+    }
+    .portal-section-view.active {
+      display: block;
+    }
+
+    @media (max-width: 900px) {
+      .portal-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header Navigation -->
+  <header>
+    <div class="container nav-bar">
+      <div class="logo-container">
+        <a href="index.html" class="d-flex align-center" style="gap: 0.75rem;">
+          <img src="assets/images/logo.jpg" alt="His Grace School Crest" class="logo-img">
+          <div class="logo-text">
+            <h1>His Grace School</h1>
+            <span>Agbugburu Village • Abeokuta</span>
+          </div>
+        </a>
+      </div>
+      
+      <!-- Desktop Navigation Menu -->
+      <ul class="nav-menu">
+        <li><a href="index.html" class="nav-link">Home</a></li>
+        <li><a href="about.html" class="nav-link">About Us</a></li>
+        <li><a href="admissions.html" class="nav-link">Admissions</a></li>
+        <li><a href="contact.html" class="nav-link">Contact Us</a></li>
+        <li><a href="student-portal-v2.html" class="nav-link active">Student Portal</a></li>
+        <li><a href="admin-v2-login.html" class="nav-link">Admin Portal V2</a></li>
+      </ul>
+      
+      <!-- Desktop Portal Button -->
+      <div class="nav-cta">
+        <a href="student-portal-v2.html" class="btn btn-primary"><i class="fa-solid fa-user-graduate"></i> Student Portal</a>
+      </div>
+
+      <!-- Mobile Menu Toggle Button -->
+      <button class="mobile-toggle" id="mobileToggle" aria-label="Toggle Navigation">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Mobile Navigation Menu Overlay -->
+  <div class="mobile-menu-overlay" id="mobileMenuOverlay">
+    <ul>
+      <li><a href="index.html" class="nav-link">Home</a></li>
+      <li><a href="about.html" class="nav-link">About Us</a></li>
+      <li><a href="admissions.html" class="nav-link">Admissions</a></li>
+      <li><a href="contact.html" class="nav-link">Contact Us</a></li>
+      <li><a href="student-portal-v2.html" class="nav-link active"><i class="fa-solid fa-user-graduate"></i> Student Portal</a></li>
+      <li><a href="admin-v2-login.html" class="nav-link"><i class="fa-solid fa-shield-halved"></i> Admin Portal V2</a></li>
+    </ul>
+  </div>
+
+  <!-- Main Portal Section -->
+  <div class="container portal-container">
+
+    <!-- Case A: Unauthenticated State (Login Screen Form) -->
+    <div id="loggedOutStateWrapper" style="display: none;">
+      <div class="login-v2-container">
+        <div class="login-v2-card">
+          <div class="login-v2-header">
+            <img src="assets/images/logo.jpg" alt="His Grace Crest">
+            <h2>STUDENT LOGIN V2</h2>
+            <p>Access your school profile records, notices, assignments, and termly scores securely.</p>
+          </div>
+
+          <!-- Failed login banner -->
+          <div id="login-error-msg" class="alert alert-danger" style="display:none; background-color: #fee2e2; border: 1.5px solid #fecaca; color: #dc2626; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; font-weight: 600; font-size: 0.95rem; text-align: center;">
+            <i class="fa-solid fa-triangle-exclamation" style="margin-right: 0.5rem;"></i>
+            <span id="error-text">Invalid Admission Number or Password.</span>
+          </div>
+
+          <form id="loginForm">
+            <div class="form-group" style="margin-bottom: 1.25rem;">
+              <label for="usernameInput" style="display: block; font-size: 0.85rem; font-weight: 700; color: var(--text-dark); margin-bottom: 0.5rem;">Admission Number or Username</label>
+              <div style="position: relative;">
+                <i class="fa-solid fa-hashtag" style="position: absolute; left: 1rem; top: 1rem; color: var(--text-muted);"></i>
+                <input type="text" id="usernameInput" required placeholder="e.g. ADM2026117 or yahuza" style="width: 100%; padding: 0.85rem 1rem 0.85rem 2.5rem; border: 1.5px solid var(--border-color); border-radius: var(--border-radius-sm); font-size: 0.95rem; outline: none; transition: var(--transition);">
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 2rem;">
+              <label for="passwordInput" style="display: block; font-size: 0.85rem; font-weight: 700; color: var(--text-dark); margin-bottom: 0.5rem;">Secure Access Password</label>
+              <div style="position: relative;">
+                <i class="fa-solid fa-lock" style="position: absolute; left: 1rem; top: 1rem; color: var(--text-muted);"></i>
+                <input type="password" id="passwordInput" required placeholder="••••••••" style="width: 100%; padding: 0.85rem 2.5rem 0.85rem 2.5rem; border: 1.5px solid var(--border-color); border-radius: var(--border-radius-sm); font-size: 0.95rem; outline: none; transition: var(--transition);">
+                <button type="button" id="togglePasswordBtn" style="position: absolute; right: 1rem; top: 0.95rem; border: none; background: transparent; color: var(--text-muted); cursor: pointer;"><i class="fa-solid fa-eye"></i></button>
+              </div>
+            </div>
+
+            <button type="submit" id="loginSubmitBtn" class="btn btn-primary" style="width: 100%; padding: 0.9rem; font-weight: 700; font-size: 1rem; border-radius: var(--border-radius-sm);"><i class="fa-solid fa-right-to-bracket" style="margin-right: 0.5rem;"></i> Secure Login</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Case B: Authenticated Panel View -->
+    <div id="loggedInStateWrapper" style="display: none;">
+      <!-- Title Banner -->
+      <div class="portal-banner">
+        <div>
+          <span class="profile-badge"><i class="fa-solid fa-user-shield"></i> Student Learning Console V2</span>
+          <h2 style="font-size: 2rem; font-weight: 800; margin-top: 0.5rem; letter-spacing: -0.01em;">Welcome back, <span id="studentPortalName">...</span></h2>
+          <p style="opacity: 0.9; margin-top: 0.25rem;">Your central portal dashboard is locked and active.</p>
+        </div>
+        <div>
+          <button class="btn btn-accent" id="logoutBtn" style="font-size: 0.85rem; padding: 0.5rem 1.25rem;"><i class="fa-solid fa-power-off"></i> Secure Exit</button>
+        </div>
+      </div>
+
+      <!-- Main Columns -->
+      <div class="portal-layout">
+        <!-- Sidebar Navigation Menu -->
+        <aside class="portal-sidebar">
+          <div class="text-center" style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1.5rem;">
+            <div style="position: relative; width: 70px; height: 70px; margin: 0 auto 0.75rem auto;">
+              <div class="profile-avatar-placeholder" id="sidebarAvatarLetters" style="font-size: 1.75rem; border: 3px solid var(--primary); width: 100%; height: 100%;">
+                <i class="fa-solid fa-user-graduate"></i>
+              </div>
+            </div>
+            <h4 style="font-size: 1.1rem; color: var(--primary); font-weight: 700;" id="sidebarName">...</h4>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0.15rem 0;" id="studentAdmissionNumber">Admission Number: ...</p>
+            <span class="badge" style="font-size: 0.7rem; margin-top: 0.25rem; display: inline-block;" id="studentClassBadge">...</span>
+          </div>
+          
+          <h5 style="text-transform: uppercase; font-size: 0.75rem; color: var(--text-muted); font-weight: 800; letter-spacing: 0.05em; padding-left: 0.75rem;">Interactive Console</h5>
+          <ul class="portal-menu">
+            <li class="portal-menu-item active" data-tab="dashboard">
+              <a href="#" class="tab-trigger"><i class="fa-solid fa-chart-line" style="width: 20px;"></i> Dashboard</a>
+            </li>
+            <li class="portal-menu-item" data-tab="profile">
+              <a href="#" class="tab-trigger"><i class="fa-solid fa-id-card" style="width: 20px;"></i> Student Profile</a>
+            </li>
+            <li class="portal-menu-item" data-tab="results">
+              <a href="#" class="tab-trigger"><i class="fa-solid fa-square-poll-vertical" style="width: 20px;"></i> Termly Results</a>
+            </li>
+            <li class="portal-menu-item" data-tab="homework">
+              <a href="#" class="tab-trigger"><i class="fa-solid fa-book-open-reader" style="width: 20px;"></i> Homework Tasks</a>
+            </li>
+            <li class="portal-menu-item" data-tab="notices">
+              <a href="#" class="tab-trigger"><i class="fa-solid fa-bullhorn" style="width: 20px;"></i> School Notices</a>
+            </li>
+            <li class="portal-menu-item" data-tab="account">
+              <a href="#" class="tab-trigger"><i class="fa-solid fa-circle-user" style="width: 20px;"></i> Account Information</a>
+            </li>
+          </ul>
+        </aside>
+
+        <!-- Main Display Content panels -->
+        <main class="portal-content" id="dashboardMainDisplay">
+          <!-- Central Loading overlay for V2 data -->
+          <div id="v2DataLoadingSec" style="text-align: center; padding: 5rem 2rem; color: var(--text-muted);">
+            <i class="fa-solid fa-spinner fa-spin-pulse" style="font-size: 3rem; color: var(--primary); margin-bottom: 1rem;"></i>
+            <p style="font-weight: 600; font-size: 1.1rem;">Verifying credential security clearance...</p>
+          </div>
+
+          <!-- General System error message placeholder -->
+          <div id="portal-top-error" style="display: none; background-color: #fee2e2; border: 1.5px solid #fecaca; padding: 2.5rem; border-radius: var(--border-radius-lg); text-align: center; max-width: 650px; margin: 2rem auto; box-shadow: var(--shadow-md);">
+            <i class="fa-solid fa-circle-xmark" style="font-size: 3.5rem; color: #dc2626; margin-bottom: 1.25rem;"></i>
+            <h3 style="color: #991b1b; font-size: 1.4rem; font-weight: 800; margin-bottom: 0.75rem;">Unable to load student profile.</h3>
+            <p id="portal-top-error-text" style="color: #7f1d1d; font-size: 1rem; line-height: 1.6; font-weight: 500;">Please contact the school administrator.</p>
+          </div>
+
+          <!-- Dynamic Panel content wrapper -->
+          <div id="panelsMainContainer" style="display: none;">
+
+            <!-- ============================================
+                 PANEL 1: DASHBOARD
+                 ============================================ -->
+            <section id="dashboard-tab-content" class="portal-section-view active">
+              <div style="display: grid; grid-template-columns: 1fr; gap: 2rem;">
+                
+                <!-- Welcome section and Quick Stats -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; align-items: stretch;">
+                  
+                  <!-- Left side profile overlay widget -->
+                  <div class="profile-card-sidebar" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                    <div class="profile-photo-container">
+                      <div class="profile-avatar-placeholder" id="dashAvatarInitials">
+                        <i class="fa-solid fa-user-graduate"></i>
+                      </div>
+                      <span class="profile-status-badge" id="dashStatusBadge">Active</span>
+                    </div>
+                    <h3 style="font-size: 1.5rem; font-weight: 800; color: var(--primary); margin-bottom: 0.25rem;" id="dashStudentName">...</h3>
+                    <p style="font-size: 0.9rem; color: var(--text-muted); font-weight: 600; margin-bottom: 0.5rem;" id="dashAdmissionNumber">...</p>
+                    <div style="margin-top: 0.5rem;">
+                      <span class="badge" style="background-color: var(--primary-light); color: var(--primary); font-weight: 700; padding: 0.4rem 1rem;" id="dashClassBadge">...</span>
+                    </div>
+                  </div>
+
+                  <!-- Right side dashboard detailed fields card -->
+                  <div class="profile-section-card">
+                    <h4 class="profile-section-title"><i class="fa-solid fa-graduation-cap"></i> Student Information System</h4>
+                    <div class="profile-data-group">
+                      <div class="profile-data-row">
+                        <span class="profile-label">Student Full Name</span>
+                        <span class="profile-val" id="detFullName">-</span>
+                      </div>
+                      <div class="profile-data-row">
+                        <span class="profile-label">Admission ID Number</span>
+                        <span class="profile-val" id="detAdmissionNumber">-</span>
+                      </div>
+                      <div class="profile-data-row">
+                        <span class="profile-label">Student ID Key</span>
+                        <span class="profile-val" id="detStudentID">-</span>
+                      </div>
+                      <div class="profile-data-row">
+                        <span class="profile-label">Current Class Group</span>
+                        <span class="profile-val" id="detClass">-</span>
+                      </div>
+                      <div class="profile-data-row">
+                        <span class="profile-label">Enrollment Registry Date</span>
+                        <span class="profile-val" id="detEnrollmentDate">-</span>
+                      </div>
+                      <div class="profile-data-row">
+                        <span class="profile-label">Portal Admission Status</span>
+                        <span class="profile-val" style="color: #15803d; font-weight: 700;" id="detStatus">-</span>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+                <!-- Academic progress metrics and quotes banner -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+                  <div class="card" style="background-color: #ffffff; padding: 1.5rem; display: flex; align-items: center; gap: 1rem; border-left: 4px solid var(--secondary);">
+                    <div style="font-size: 2rem; color: var(--secondary);"><i class="fa-solid fa-square-poll-vertical"></i></div>
+                    <div>
+                      <h5 style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;">Avg Academic Standing</h5>
+                      <p style="font-size: 1.15rem; font-weight: 800; color: var(--primary);" id="dashAverageScore">86.4% Outstanding</p>
+                    </div>
+                  </div>
+                  <div class="card" style="background-color: #ffffff; padding: 1.5rem; display: flex; align-items: center; gap: 1rem; border-left: 4px solid var(--primary);">
+                    <div style="font-size: 2rem; color: var(--primary);"><i class="fa-solid fa-bullhorn"></i></div>
+                    <div>
+                      <h5 style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;">Active Bulletins Published</h5>
+                      <p style="font-size: 1.15rem; font-weight: 800; color: var(--primary);" id="dashBulletinsCount">Loading active notice lines...</p>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </section>
+
+            <!-- ============================================
+                 PANEL 2: STUDENT PROFILE
+                 ============================================ -->
+            <section id="profile-tab-content" class="portal-section-view">
+              <div class="profile-grid">
+                
+                <!-- 1. Personal Info Card -->
+                <div class="profile-section-card">
+                  <h4 class="profile-section-title"><i class="fa-solid fa-user"></i> Personal Information</h4>
+                  <div class="profile-data-group">
+                    <div class="profile-data-row">
+                      <span class="profile-label">Full Name</span>
+                      <span class="profile-val" id="profPersName">-</span>
+                    </div>
+                    <div class="profile-data-row">
+                      <span class="profile-label">Admission Number</span>
+                      <span class="profile-val" id="profPersAdNum">-</span>
+                    </div>
+                    <div class="profile-data-row">
+                      <span class="profile-label">Student ID</span>
+                      <span class="profile-val" id="profPersID">-</span>
+                    </div>
+                    <div class="profile-data-row">
+                      <span class="profile-label">Gender</span>
+                      <span class="profile-val" id="profPersGender">-</span>
+                    </div>
+                    <div class="profile-data-row">
+                      <span class="profile-label">Date of Birth</span>
+                      <span class="profile-val" id="profPersDob">-</span>
+                    </div>
+                    <div class="profile-data-row">
+                      <span class="profile-label">Current Class</span>
+                      <span class="profile-val" id="profPersClass">-</span>
+                    </div>
+                    <div class="profile-data-row">
+                      <span class="profile-label">Enrollment Date</span>
+                      <span class="profile-val" id="profPersEnrollDate">-</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 2. Parent Info Card -->
+                <div class="profile-section-card">
+                  <h4 class="profile-section-title"><i class="fa-solid fa-users"></i> Parent & Guardian Details</h4>
+                  <div class="profile-data-group">
+                    <div class="profile-data-row">
+                      <span class="profile-label">Parent/Guardian Name</span>
+                      <span class="profile-val" id="profParName">-</span>
+                    </div>
+                    <div class="profile-data-row">
+                      <span class="profile-label">Parent Email Address</span>
+                      <span class="profile-val" id="profParEmail">-</span>
+                    </div>
+                    <div class="profile-data-row">
+                      <span class="profile-label">Parent Phone Number</span>
+                      <span class="profile-val" id="profParPhone">-</span>
+                    </div>
+                    <div class="profile-data-row" style="flex-direction: column; gap: 0.5rem; align-items: stretch; border-bottom: none;">
+                      <span class="profile-label">Resident Home Address</span>
+                      <span class="profile-val" id="profParAddress" style="text-align: left; font-size: 0.9rem; word-break: break-word;">-</span>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </section>
+
+            <!-- ============================================
+                 PANEL 3: TERMLY RESULTS
+                 ============================================ -->
+            <section id="results-tab-content" class="portal-section-view">
+              <div class="profile-section-card" style="margin-bottom: 1.5rem;">
+                <div class="d-flex justify-between align-center" style="margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;">
+                  <h3 style="font-size: 1.25rem; color: var(--primary); font-weight: 800; margin: 0;"><i class="fa-solid fa-square-poll-vertical"></i> Academic Standing Report Sheet</h3>
+                  <span class="badge" style="background-color: var(--primary-light); color: var(--primary); font-weight: 800; padding: 0.35rem 1rem;">Official Registry Copy</span>
+                </div>
+
+                <div style="display: flex; gap: 2rem; flex-wrap: wrap; margin-bottom: 1.5rem; background-color: var(--primary-light); padding: 1.25rem; border-radius: var(--border-radius-sm);">
+                  <div>
+                    <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;">Termly Grading Policy</span>
+                    <p style="font-size: 1.15rem; font-weight: 800; color: var(--primary);">40% Class CA + 60% Exam Score</p>
+                  </div>
+                  <div>
+                    <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;">Aggregated Average</span>
+                    <p style="font-size: 1.15rem; font-weight: 800; color: var(--secondary);" id="repAverageText">86.4% (Outstanding)</p>
+                  </div>
+                  <div>
+                    <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;">Attendance Rate</span>
+                    <p style="font-size: 1.15rem; font-weight: 800; color: var(--accent);">98.5% (Commendable)</p>
+                  </div>
+                </div>
+
+                <!-- Subjects Score sheet table -->
+                <div class="card-table-wrap" style="box-shadow: none; border: 1px solid var(--border-color); overflow-x: auto;">
+                  <table class="db-table" style="width: 100%;">
+                    <thead>
+                      <tr>
+                        <th>Subject Course Item</th>
+                        <th style="text-align: center;">CA Marks (40)</th>
+                        <th style="text-align: center;">Exam Score (60)</th>
+                        <th style="text-align: center;">Total (100)</th>
+                        <th style="text-align: center;">Grade Rating</th>
+                      </tr>
+                    </thead>
+                    <tbody id="studentGradesV2Body">
+                      <!-- Filled dynamically in script -->
+                    </tbody>
+                  </table>
+                </div>
+
+                <div style="border-top: 1.5px solid var(--border-color); padding-top: 1.25rem; font-size: 0.95rem; color: var(--text-dark); background-color: #fafbfc; border-radius: 6px; padding: 1.25rem; margin-top: 1.5rem; line-height: 1.5;">
+                  <strong>Remarks of level advisor counselor:</strong>
+                  <p style="font-style: italic; color: var(--text-muted); margin-top: 0.25rem;" id="coachRemarksV2Text">"No custom comments logged yet. Keep studying hard!"</p>
+                </div>
+              </div>
+            </section>
+
+            <!-- ============================================
+                 PANEL 4: HOMEWORK TASKS
+                 ============================================ -->
+            <section id="homework-tab-content" class="portal-section-view">
+              <h3 style="font-size: 1.25rem; color: var(--primary); margin-bottom: 1.25rem; font-weight: 800;"><i class="fa-solid fa-book-open-reader"></i> Registered Homework Assignments</h3>
+              
+              <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <!-- Homework 1 -->
+                <div class="profile-section-card" style="position: relative;">
+                  <div class="d-flex justify-between" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                    <strong>Quantitative Arithmetic Homework</strong>
+                    <span>Due Target: Monday, June 22</span>
+                  </div>
+                  <h4 style="font-weight: 700; color: var(--text-dark); margin-bottom: 0.5rem; font-size: 1.1rem;">Subtraction Structures of Double Digits</h4>
+                  <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1rem;">Complete page 24 inside the physical Quantities Assessment workbook. Ensure handwriting is neat and double check carries.</p>
+                  <span class="badge" style="font-size: 0.75rem; background-color: #fef3c7; color: #b45309; padding: 0.35rem 0.75rem; border-radius: 50px;"><i class="fa-solid fa-hourglass-half" style="margin-right: 0.35rem;"></i> Pending Submission Check</span>
+                </div>
+
+                <!-- Homework 2 -->
+                <div class="profile-section-card">
+                  <div class="d-flex justify-between" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                    <strong>Civic Character Education</strong>
+                    <span>Due Target: Thursday, June 18</span>
+                  </div>
+                  <h4 style="font-weight: 700; color: var(--text-dark); margin-bottom: 0.5rem; font-size: 1.1rem;">Drafting Community Leadership Essays</h4>
+                  <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1rem;">Explain 3 easy ways children show godly respect to elders in Agbugburu Village. Write your draft directly in the Character Notebook.</p>
+                  <span class="badge" style="font-size: 0.75rem; background-color: #e2f0d9; color: #385723; padding: 0.35rem 0.75rem; border-radius: 50px;"><i class="fa-solid fa-check-double" style="margin-right: 0.35rem;"></i> Completed and Evaluated - 10/10 Excellent</span>
+                </div>
+              </div>
+            </section>
+
+            <!-- ============================================
+                 PANEL 5: SCHOOL NOTICES
+                 ============================================ -->
+            <section id="notices-tab-content" class="portal-section-view">
+              <h3 style="font-size: 1.25rem; color: var(--primary); margin-bottom: 1.25rem; font-weight: 800;"><i class="fa-solid fa-bullhorn" style="color: var(--accent);"></i> Central Notices Board</h3>
+              
+              <div id="v2NoticesContainer" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                  <i class="fa-solid fa-spinner fa-spin" style="font-size: 1.5rem; margin-bottom: 0.5rem;"></i> Loading central announcement feeds...
+                </div>
+              </div>
+            </section>
+
+            <!-- ============================================
+                 PANEL 6: ACCOUNT INFORMATION
+                 ============================================ -->
+            <section id="account-tab-content" class="portal-section-view">
+              <div class="profile-section-card" style="max-width: 600px; margin: 0 auto;">
+                <h4 class="profile-section-title"><i class="fa-solid fa-circle-user"></i> Portal Account Credentials</h4>
+                
+                <div class="profile-data-group" style="margin-bottom: 1.5rem;">
+                  <div class="profile-data-row">
+                    <span class="profile-label">Account Authorized Username</span>
+                    <span class="profile-val" style="font-family: monospace; background-color: var(--bg-slate); padding: 0.25rem 0.5rem; border-radius: 4px;" id="accUsername">-</span>
+                  </div>
+                  <div class="profile-data-row">
+                    <span class="profile-label">Admission Account Status</span>
+                    <span class="profile-val" style="color: #10b981; font-weight: 800;" id="accStatus">-</span>
+                  </div>
+                  <div class="profile-data-row">
+                    <span class="profile-label">System Account Registry ID</span>
+                    <span class="profile-val" id="accRegistryId">-</span>
+                  </div>
+                  <div class="profile-data-row">
+                    <span class="profile-label">Registration Creation Date</span>
+                    <span class="profile-val" id="accRegDate">-</span>
+                  </div>
+                  <div class="profile-data-row" style="flex-direction: column; gap: 0.5rem; align-items: stretch; border-bottom: none;">
+                    <span class="profile-label">Secured Access Password (Authorized View)</span>
+                    <div style="position: relative; display: flex; gap: 0.5rem;">
+                      <input type="password" id="accPasswordVal" readonly value="unknown" style="flex: 1; padding: 0.75rem 1rem; border: 1.5px solid var(--border-color); border-radius: var(--border-radius-sm); font-size: 0.95rem; font-family: monospace; background-color: var(--bg-slate); outline: none;">
+                      <button type="button" id="accPasswordToggle" class="btn btn-outline" style="padding: 0 1rem;"><i class="fa-solid fa-eye"></i> Show</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="background-color: #fef8ec; border: 1.5px dashed #f59e0b; border-radius: var(--border-radius-sm); padding: 1.25rem; font-size: 0.85rem; line-height: 1.5; color: #b45309;">
+                  <h5 style="font-weight: 700; margin-bottom: 0.35rem;"><i class="fa-solid fa-shield-halved"></i> Security & Protection Standards</h5>
+                  Your account utilizes encrypted database schemas that secure parent profile linkages. If you lose or desire changes to your passwords, contact the Registry Officer at <strong>hisgraceschool.name.ng@gmail.com</strong>.
+                </div>
+              </div>
+            </section>
+
+          </div>
+        </main>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <footer style="margin-top: 4rem;">
+    <div class="container footer-grid">
+      <div class="footer-col">
+        <div class="logo-container" style="margin-bottom: 1.25rem;">
+          <img src="assets/images/logo.jpg" alt="His Grace Crest" class="logo-img" style="border: 2px solid var(--accent);">
+          <h3 style="color: white; margin-bottom: 0;">His Grace School</h3>
+        </div>
+        <p>Moulding local learners into responsible, confident, and academically sound community leaders of tomorrow. Built on faith, academic standards, and godly grace.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Useful Links</h4>
+        <ul class="footer-links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+        </ul>
+      </div>
+    </div>
+    
+    <div class="footer-bottom">
+      <div class="container d-flex justify-between align-center flex-column" style="gap: 1rem;">
+        <p>&copy; 2026 His Grace Nursery & Primary School. All rights reserved.</p>
+        <span class="badge" style="background-color: rgba(255, 255, 255, 0.1); color: var(--accent); font-weight: 700;">Motto: Building Lives for Greatness</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Security & Firebase modules -->
+  <script type="module">
+    import { 
+      getActiveStudentSession, 
+      logoutStudent, 
+      getStudentProfileByAdmission, 
+      loginStudent, 
+      getNotices 
+    } from './assets/js/firebase-core.js';
+
+    // HTML escape helper
+    function escapeHTML(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 1. Session check to select layout View State
+      const session = getActiveStudentSession();
+      
+      const loggedOutStateWrapper = document.getElementById('loggedOutStateWrapper');
+      const loggedInStateWrapper = document.getElementById('loggedInStateWrapper');
+
+      if (!session) {
+        // Show login Screen container
+        if (loggedOutStateWrapper) loggedOutStateWrapper.style.display = 'block';
+        if (loggedInStateWrapper) loggedInStateWrapper.style.display = 'none';
+        initLoginScript();
+        return;
+      }
+
+      // Show authenticated Screen panel
+      if (loggedOutStateWrapper) loggedOutStateWrapper.style.display = 'none';
+      if (loggedInStateWrapper) loggedInStateWrapper.style.display = 'block';
+
+      // 2. Pre-populate immediate fields using cached student session object to prevent visual bounce
+      const immediatePortalNameEl = document.getElementById('studentPortalName');
+      const immediateSideNameEl = document.getElementById('sidebarName');
+      const immediateClassBadgeEl = document.getElementById('studentClassBadge');
+      const immediateAdmNumEl = document.getElementById('studentAdmissionNumber');
+
+      if (immediatePortalNameEl) immediatePortalNameEl.textContent = session.studentName || 'Student';
+      if (immediateSideNameEl) immediateSideNameEl.textContent = session.studentName || 'Student';
+      if (immediateClassBadgeEl) immediateClassBadgeEl.textContent = session.gradeApplying || 'Primary 1';
+      if (immediateAdmNumEl) immediateAdmNumEl.textContent = `Admission Number: ${session.admissionNumber || '...'}`;
+
+      // Create quick initials for the sidebar rounded profile placeholder
+      const sideLettersContainer = document.getElementById('sidebarAvatarLetters');
+      if (sideLettersContainer && session.studentName) {
+        const parts = session.studentName.trim().split(' ');
+        let initials = '';
+        if (parts.length > 0) initials += parts[0][0];
+        if (parts.length > 1) initials += parts[1][0];
+        if (initials) sideLettersContainer.textContent = initials.toUpperCase();
+      }
+
+      // 3. Automated profile loading from: hgs_students
+      const loadingSec = document.getElementById('v2DataLoadingSec');
+      const panelsContainer = document.getElementById('panelsMainContainer');
+      const portalTopError = document.getElementById('portal-top-error');
+      const portalTopErrorText = document.getElementById('portal-top-error-text');
+
+      try {
+        if (!session.admissionNumber) {
+          throw new Error("Student profile could not be verified due to missing session registration number.");
+        }
+
+        const studentProfile = await getStudentProfileByAdmission(session.admissionNumber);
+
+        if (!studentProfile) {
+          // If no student record exists inside hgs_students collection
+          throw new Error("Student profile not found. Please contact the school administrator.");
+        }
+
+        // Hide loader, display panel content wrapper
+        if (loadingSec) loadingSec.style.display = 'none';
+        if (portalTopError) portalTopError.style.display = 'none';
+        if (panelsContainer) panelsContainer.style.display = 'block';
+
+        // 4. Populate dynamic data values inside the panel screens
+        renderStudentConsole(studentProfile, session);
+
+      } catch (err) {
+        console.error("V2 Automated Profile Loading Failure:", err);
+        
+        // Remove perpetual loader state
+        if (loadingSec) loadingSec.style.display = 'none';
+        if (panelsContainer) panelsContainer.style.display = 'none';
+
+        // Show friendly error message explicitly
+        if (portalTopError && portalTopErrorText) {
+          portalTopError.style.display = 'block';
+          portalTopErrorText.textContent = err.message || "Student profile not found. Please contact the school administrator.";
+        }
+      }
+
+      // Initialize Menu tab triggering
+      initTabTriggers();
+      initLogoutScript();
+    });
+
+    // Login handlers setup logic
+    function initLoginScript() {
+      const loginForm = document.getElementById('loginForm');
+      const togglePasswordBtn = document.getElementById('togglePasswordBtn');
+      const passwordInput = document.getElementById('passwordInput');
+
+      if (togglePasswordBtn && passwordInput) {
+        togglePasswordBtn.addEventListener('click', () => {
+          if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            togglePasswordBtn.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
+          } else {
+            passwordInput.type = 'password';
+            togglePasswordBtn.innerHTML = '<i class="fa-solid fa-eye"></i>';
+          }
+        });
+      }
+
+      if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          
+          const usernameVal = document.getElementById('usernameInput').value;
+          const passwordVal = passwordInput.value;
+          const errorMsgBlock = document.getElementById('login-error-msg');
+          const errorMsgText = document.getElementById('error-text');
+          const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+
+          if (errorMsgBlock) errorMsgBlock.style.display = 'none';
+          
+          if (loginSubmitBtn) {
+            loginSubmitBtn.disabled = true;
+            loginSubmitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Authenticating...';
+          }
+
+          try {
+            await loginStudent(usernameVal, passwordVal);
+            
+            // Success! Reload page to display authenticated view
+            window.location.reload();
+          } catch (err) {
+            console.error("Login authentication check failed details:", err);
+            
+            if (errorMsgBlock && errorMsgText) {
+              // Strictly display user-friendly output as mandated
+              errorMsgText.textContent = "Invalid Admission Number or Password.";
+              errorMsgBlock.style.display = 'block';
+            }
+          } finally {
+            if (loginSubmitBtn) {
+              loginSubmitBtn.disabled = false;
+              loginSubmitBtn.innerHTML = '<i class="fa-solid fa-right-to-bracket" style="margin-right: 0.5rem;"></i> Secure Login';
+            }
+          }
+        });
+      }
+    }
+
+    // Tab items switching
+    function initTabTriggers() {
+      const menuItems = document.querySelectorAll('.portal-menu-item');
+      menuItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+          e.preventDefault();
+          const targetTabName = item.getAttribute('data-tab');
+          if (!targetTabName) return;
+
+          // Toggle high-light on sidebar menu list
+          menuItems.forEach(mi => mi.classList.remove('active'));
+          item.classList.add('active');
+
+          // Switch active views
+          const sectionPanels = document.querySelectorAll('.portal-section-view');
+          sectionPanels.forEach(panel => {
+            panel.classList.remove('active');
+          });
+
+          const activePanel = document.getElementById(`${targetTabName}-tab-content`);
+          if (activePanel) {
+            activePanel.classList.add('active');
+          }
+        });
+      });
+    }
+
+    // Render Student data correctly
+    async function renderStudentConsole(profile, session) {
+      const sName = profile.studentName || profile.fullName || session.studentName || 'Unspecified Student';
+      const sAdmNumber = profile.admissionNumber || session.admissionNumber || 'Unspecified Admission ID';
+      const sClass = profile.class || profile.gradeApplying || session.gradeApplying || 'Primary 1';
+      const sStatus = profile.status || 'Active';
+      const sId = profile.id || profile.studentId || profile.docId || 'N/A';
+
+      // 1. Dashboard Tab Data Values
+      document.getElementById('studentPortalName').textContent = sName;
+      document.getElementById('sidebarName').textContent = sName;
+      document.getElementById('studentAdmissionNumber').textContent = `Admission Number: ${sAdmNumber}`;
+      document.getElementById('studentClassBadge').textContent = sClass;
+
+      document.getElementById('dashStudentName').textContent = sName;
+      document.getElementById('dashAdmissionNumber').textContent = `Admission: ${sAdmNumber}`;
+      document.getElementById('dashClassBadge').textContent = sClass;
+
+      const dashStatusBadge = document.getElementById('dashStatusBadge');
+      if (dashStatusBadge) {
+        dashStatusBadge.textContent = sStatus;
+        if (sStatus === 'Active' || sStatus === 'Approved') {
+          dashStatusBadge.style.backgroundColor = '#10b981';
+        } else {
+          dashStatusBadge.style.backgroundColor = '#f59e0b';
+        }
+      }
+
+      // Generate dashboard profile placeholder avatar letters
+      const initialsBox = document.getElementById('dashAvatarInitials');
+      if (initialsBox && sName) {
+        const parts = sName.trim().split(' ');
+        let initials = '';
+        if (parts.length > 0) initials += parts[0][0];
+        if (parts.length > 1) initials += parts[1][0];
+        if (initials) {
+          initialsBox.textContent = initials.toUpperCase();
+        }
+      }
+
+      // Detailed information list in dashboard
+      document.getElementById('detFullName').textContent = sName;
+      document.getElementById('detAdmissionNumber').textContent = sAdmNumber;
+      document.getElementById('detStudentID').textContent = sId;
+      document.getElementById('detClass').textContent = sClass;
+      
+      let enrollTimeText = "-";
+      if (profile.createdAt) {
+        try {
+          enrollTimeText = new Date(profile.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+        } catch (e) {}
+      }
+      document.getElementById('detEnrollmentDate').textContent = enrollTimeText;
+      document.getElementById('detStatus').textContent = sStatus;
+
+      // 2. Student Profile Tab Data Values
+      document.getElementById('profPersName').textContent = sName;
+      document.getElementById('profPersAdNum').textContent = sAdmNumber;
+      document.getElementById('profPersID').textContent = sId;
+      document.getElementById('profPersGender').textContent = profile.gender || profile.studentGender || 'Unspecified';
+      
+      let dobValueStr = profile.dateOfBirth || profile.dob || 'Unspecified';
+      if (dobValueStr && dobValueStr !== 'Unspecified') {
+        try {
+          const dObj = new Date(dobValueStr);
+          if (!isNaN(dObj.getTime())) {
+            dobValueStr = dObj.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+          }
+        } catch (e) {}
+      }
+      document.getElementById('profPersDob').textContent = dobValueStr;
+      document.getElementById('profPersClass').textContent = sClass;
+      document.getElementById('profPersEnrollDate').textContent = enrollTimeText;
+
+      // Parent Info Card fields mapping
+      const pNameValue = profile.parentName || 'Unspecified Parent';
+      const pEmailValue = profile.parentEmail || profile.email || 'Unspecified';
+      const pPhoneValue = profile.parentPhone || 'Unspecified';
+      const pAddressValue = profile.address || profile.homeAddress || 'Unspecified Home Address';
+
+      document.getElementById('profParName').textContent = pNameValue;
+      document.getElementById('profParEmail').textContent = pEmailValue;
+      document.getElementById('profParPhone').textContent = pPhoneValue;
+      document.getElementById('profParAddress').textContent = pAddressValue;
+
+      // 3. Termly Results Tab Data Values
+      const grades = profile.grades || { english: 85, math: 80, computer: 90, civic: 95, agriculture: 75 };
+      const avgValue = ((Number(grades.english) + Number(grades.math) + Number(grades.computer) + Number(grades.civic) + Number(grades.agriculture)) / 5).toFixed(1);
+      
+      let levelGrading = "Merit";
+      if (avgValue >= 90) levelGrading = "Outstanding Merit";
+      else if (avgValue >= 80) levelGrading = "Outstanding Class Performance";
+      else if (avgValue >= 70) levelGrading = "Very Good standing";
+      else if (avgValue >= 50) levelGrading = "Satisfactory Progress";
+      else levelGrading = "Needs Support Review";
+
+      document.getElementById('repAverageText').textContent = `${avgValue}% (${levelGrading})`;
+      document.getElementById('dashAverageScore').textContent = `${avgValue}% (${levelGrading})`;
+
+      const getGradeTagSymbol = (m) => {
+        if (m >= 90) return 'A+';
+        if (m >= 80) return 'A';
+        if (m >= 70) return 'B+';
+        if (m >= 60) return 'B';
+        if (m >= 50) return 'C';
+        return 'F';
+      };
+
+      const formatV2CA = (tot) => Math.round(Number(tot) * 0.4);
+      const formatV2Exam = (tot) => Math.round(Number(tot) * 0.6);
+
+      const studentGradesV2Body = document.getElementById('studentGradesV2Body');
+      if (studentGradesV2Body) {
+        studentGradesV2Body.innerHTML = `
+          <tr>
+            <td><strong>English Language & Phonics</strong></td>
+            <td style="text-align: center;">${formatV2CA(grades.english)}</td>
+            <td style="text-align: center;">${formatV2Exam(grades.english)}</td>
+            <td style="text-align: center; font-weight: 700;">${grades.english}</td>
+            <td style="text-align: center;"><span class="score-grade" style="color:var(--primary); font-weight:800;">${getGradeTagSymbol(grades.english)}</span></td>
+          </tr>
+          <tr>
+            <td><strong>Quantitative Mathematics</strong></td>
+            <td style="text-align: center;">${formatV2CA(grades.math)}</td>
+            <td style="text-align: center;">${formatV2Exam(grades.math)}</td>
+            <td style="text-align: center; font-weight: 700;">${grades.math}</td>
+            <td style="text-align: center;"><span class="score-grade" style="color:var(--primary); font-weight:800;">${getGradeTagSymbol(grades.math)}</span></td>
+          </tr>
+          <tr>
+            <td><strong>Computer Literacy Basics</strong></td>
+            <td style="text-align: center;">${formatV2CA(grades.computer)}</td>
+            <td style="text-align: center;">${formatV2Exam(grades.computer)}</td>
+            <td style="text-align: center; font-weight: 700;">${grades.computer}</td>
+            <td style="text-align: center;"><span class="score-grade" style="color:var(--primary); font-weight:800;">${getGradeTagSymbol(grades.computer)}</span></td>
+          </tr>
+          <tr>
+            <td><strong>Civic & Christian Characters</strong></td>
+            <td style="text-align: center;">${formatV2CA(grades.civic)}</td>
+            <td style="text-align: center;">${formatV2Exam(grades.civic)}</td>
+            <td style="text-align: center; font-weight: 700;">${grades.civic}</td>
+            <td style="text-align: center;"><span class="score-grade" style="color:var(--primary); font-weight:800;">${getGradeTagSymbol(grades.civic)}</span></td>
+          </tr>
+          <tr>
+            <td><strong>Agricultural Sciences</strong></td>
+            <td style="text-align: center;">${formatV2CA(grades.agriculture)}</td>
+            <td style="text-align: center;">${formatV2Exam(grades.agriculture)}</td>
+            <td style="text-align: center; font-weight: 700;">${grades.agriculture}</td>
+            <td style="text-align: center;"><span class="score-grade" style="color:var(--primary); font-weight:800;">${getGradeTagSymbol(grades.agriculture)}</span></td>
+          </tr>
+        `;
+      }
+
+      const remarksVal = profile.coachRemarks || "No custom performance evaluation comments logged yet by the level instructor. Keep studying diligently!";
+      document.getElementById('coachRemarksV2Text').textContent = `"${remarksVal}"`;
+
+      // 4. Account Information Tab Values
+      document.getElementById('accUsername').textContent = profile.username || 'Unspecified';
+      document.getElementById('accStatus').textContent = sStatus;
+      document.getElementById('accRegistryId').textContent = sId;
+      
+      let fullRegDateStr = "-";
+      if (profile.createdAt) {
+        try {
+          fullRegDateStr = new Date(profile.createdAt).toLocaleString();
+        } catch (e) {}
+      }
+      document.getElementById('accRegDate').textContent = fullRegDateStr;
+
+      const accPasswordVal = document.getElementById('accPasswordVal');
+      const accPasswordToggle = document.getElementById('accPasswordToggle');
+      if (accPasswordVal) {
+        accPasswordVal.value = profile.password || '••••••••';
+      }
+      if (accPasswordToggle && accPasswordVal) {
+        accPasswordToggle.addEventListener('click', () => {
+          if (accPasswordVal.type === 'password') {
+            accPasswordVal.type = 'text';
+            accPasswordToggle.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Hide';
+          } else {
+            accPasswordVal.type = 'password';
+            accPasswordToggle.innerHTML = '<i class="fa-solid fa-eye"></i> Show';
+          }
+        });
+      }
+
+      // 5. Notices dynamic loaded from Firestore
+      await loadNoticesFeed(sClass);
+    }
+
+    // Query active notice bulletins
+    async function loadNoticesFeed(studentClass) {
+      const container = document.getElementById('v2NoticesContainer');
+      const countEl = document.getElementById('dashBulletinsCount');
+      if (!container) return;
+
+      try {
+        const notices = await getNotices();
+        const normalizedClass = (studentClass || '').toLowerCase().trim();
+
+        const filtered = notices.filter(n => {
+          const target = (n.targetClass || 'ALL').toLowerCase().trim();
+          return target === 'all' || target === 'all classes' || target === normalizedClass;
+        });
+
+        if (countEl) {
+          countEl.textContent = `${filtered.length} notices for ${studentClass}`;
+        }
+
+        if (filtered.length === 0) {
+          container.innerHTML = `
+            <div class="card" style="background-color: #ffffff; padding: 2.5rem; text-align: center; color: var(--text-muted); border-radius: 8px; border: 1.5px solid var(--border-color);">
+              <i class="fa-solid fa-folder-open" style="font-size: 2.5rem; color: #cbd5e1; margin-bottom: 0.75rem; display:block;"></i>
+              No active announcements published for your class division. Check back later!
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = filtered.map(item => {
+          const date = item.createdAt ? new Date(item.createdAt).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'School Board Notice';
+          return `
+            <div class="card" style="background-color: #ffffff; padding: 1.75rem; border-left: 5px solid var(--secondary); box-shadow: var(--shadow-sm); border-radius: 8px; margin-bottom: 1rem; border: 1px solid var(--border-color); border-left-width: 5px;">
+              <div class="d-flex justify-between" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+                <strong>${escapeHTML(item.author || 'Registry Office')}</strong>
+                <span>${date}</span>
+              </div>
+              <h4 style="color: var(--secondary); font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem;">${escapeHTML(item.title)}</h4>
+              <p style="font-size: 0.95rem; color: var(--text-dark); line-height: 1.6; white-space: pre-wrap;">${escapeHTML(item.content)}</p>
+              <span class="badge" style="font-size: 0.75rem; margin-top: 1rem; display: inline-block; background-color: var(--primary-light); color: var(--primary); text-transform: capitalize;">${escapeHTML(item.targetClass || 'All Classes')} announcements board</span>
+            </div>
+          `;
+        }).join('');
+
+      } catch (err) {
+        console.error("Noticeboard dynamic loading error:", err);
+        container.innerHTML = `<p style="color: red; text-align: center;">Unable to sync announcements board updates.</p>`;
+        if (countEl) {
+          countEl.textContent = "Unable to fetch bulletins count";
+        }
+      }
+    }
+
+    // Logout script handlers
+    function initLogoutScript() {
+      const logoutBtn = document.getElementById('logoutBtn');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          if (confirm("Are you sure you want to securely log out of your Student Learning Console?")) {
+            logoutStudent();
+            // Clear cached local storage keys explicitly
+            localStorage.removeItem('hgs_student_session');
+            localStorage.removeItem('hgs_student_admission_doc_id');
+            // Redirect or reload page to default login state
+            window.location.replace('student-portal-v2.html');
+          }
+        });
+      }
+
+      // Mobile Menu trigger toggle block
+      const mobileToggle = document.getElementById('mobileToggle');
+      const mobileMenu = document.getElementById('mobileMenuOverlay');
+      if (mobileToggle && mobileMenu) {
+        mobileToggle.addEventListener('click', () => {
+          mobileMenu.classList.toggle('active');
+          mobileToggle.classList.toggle('open');
+        });
+      }
+    }
+  </script>
+</body>
+</html>

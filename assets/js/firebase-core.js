@@ -783,7 +783,8 @@ export const loginStudent = async (admissionNumber, password) => {
   const studentsList = await getStudents();
   
   const student = studentsList.find(s => 
-    s.admissionNumber && s.admissionNumber.toUpperCase().trim() === sanitizedNum
+    (s.admissionNumber && s.admissionNumber.toUpperCase().trim() === sanitizedNum) ||
+    (s.username && s.username.toUpperCase().trim() === sanitizedNum)
   );
 
   if (!student) {
