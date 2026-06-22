@@ -366,6 +366,9 @@
             <li class="portal-menu-item" data-tab="results">
               <a href="#" class="tab-trigger"><i class="fa-solid fa-square-poll-vertical" style="width: 20px;"></i> Termly Results</a>
             </li>
+            <li class="portal-menu-item" data-tab="cbt_exams">
+              <a href="#" class="tab-trigger"><i class="fa-solid fa-laptop-code" style="width: 20px;"></i> CBT Exams</a>
+            </li>
             <li class="portal-menu-item" data-tab="homework">
               <a href="#" class="tab-trigger"><i class="fa-solid fa-book-open-reader" style="width: 20px;"></i> Homework Tasks</a>
             </li>
@@ -610,6 +613,100 @@
               </div>
             </section>
 
+             <!-- ============================================
+                  PANEL 3.5: CBT EXAMINATIONS TAB
+                  ============================================ -->
+             <section id="cbt_exams-tab-content" class="portal-section-view">
+               <div style="background-color: #ffffff; border-radius: 8px; border: 1px solid var(--border-color); padding: 2.25rem; box-shadow: var(--shadow-sm);">
+                 
+                 <!-- STATE 1: EXAMS ROSTER VIEW -->
+                 <div id="studentCbtRosterView">
+                   <div style="border-bottom: 2px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 2rem;">
+                     <h3 style="font-size: 1.4rem; color: var(--primary); font-weight: 800; margin: 0;"><i class="fa-solid fa-laptop-code" style="color: var(--secondary);"></i> Computer-Based Testing (CBT) Center</h3>
+                     <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">Select an available assignment or termly test to begin examination.</p>
+                   </div>
+                   
+                   <div id="studentCbtLoading" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+                     <i class="fa-solid fa-spinner fa-spin fa-2x" style="color: var(--primary);"></i>
+                     <p style="margin-top: 0.5rem; font-weight: bold;">Loading CBT examinations available for your class...</p>
+                   </div>
+
+                   <div id="studentCbtEmpty" style="display: none; text-align: center; padding: 3rem 1rem; border: 2px dashed var(--border-color); border-radius: 8px;">
+                     <i class="fa-solid fa-graduation-cap fa-3x" style="color: var(--border-color); margin-bottom: 1rem;"></i>
+                     <h4 style="color: var(--text-dark);">No CBT Exams Scheduled</h4>
+                     <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.5rem;">There are no active Computer-Based Tests currently configured for your academic level.</p>
+                   </div>
+
+                   <div id="studentCbtExamsGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 1.5rem;">
+                     <!-- Dynamically populated student exam cards -->
+                   </div>
+                 </div>
+
+                 <!-- STATE 2: ACTIVE EXAM INTERACTION VIEW (HIDDEN BY DEFAULT) -->
+                 <div id="studentActiveExamView" style="display: none;">
+                   <!-- Floating Action Bar for Timer and Actions -->
+                   <div style="position: sticky; top: 0px; background-color: var(--primary); color: #ffffff; padding: 1rem 1.5rem; border-radius: 8px; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow-md); z-index: 100;">
+                     <div>
+                       <strong style="font-size: 1.15rem; display: block;" id="activeExamHeaderTitle">Mathematics Exam</strong>
+                       <span style="font-size: 0.75rem; color: var(--border-color);" id="activeExamHeaderSubtitle">15 Questions • 45 minutes</span>
+                     </div>
+                     <div style="background-color: rgba(255,255,255,0.15); border: 1.5px solid #ffffff; padding: 0.5rem 1rem; border-radius: 6px; text-align: right;">
+                       <span style="font-size: 0.75rem; text-transform: uppercase; font-weight: bold; color: var(--accent); display: block;">Time Remaining</span>
+                       <strong style="font-size: 1.3rem; font-family: monospace;" id="activeTimerText">00:00</strong>
+                     </div>
+                   </div>
+
+                   <!-- Quick Navigation Palette -->
+                   <div style="background-color: var(--primary-light); padding: 1rem; border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 2rem;">
+                     <span style="font-size: 0.8rem; font-weight: bold; margin-bottom: 0.5rem; display: block; color: var(--primary);">Question Completion Tracker</span>
+                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;" id="questionsPaletteContainer">
+                       <!-- Circular navigation nodes e.g. [1], [2], [3] -->
+                     </div>
+                   </div>
+
+                   <!-- Questions Forms Layout wrapper -->
+                   <form id="studentExamPlayForm">
+                     <div style="display: flex; flex-direction: column; gap: 2rem;" id="activeQuestionsPlayList">
+                       <!-- MCQ choices list -->
+                     </div>
+                     
+                     <div style="margin-top: 3rem; border-top: 2px solid var(--border-color); padding-top: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem;">
+                       <button type="button" class="btn btn-outline" id="earlyExitExamBtn"><i class="fa-solid fa-triangle-exclamation"></i> Cancel and Exit</button>
+                       <button type="submit" class="btn btn-secondary" style="padding: 1rem 2.5rem; font-size: 1.05rem; font-weight: 800; border-radius: 6px;" id="submitCbtExamBtn"><i class="fa-solid fa-cloud-arrow-up"></i> Submit Examination Now</button>
+                     </div>
+                   </form>
+                 </div>
+
+                 <!-- STATE 3: CBT EXAM RESULTS MODAL / SCORECARD -->
+                 <div id="studentCbtResultCard" style="display: none; text-align: center; border: 2.5px solid var(--border-color); border-radius: 12px; padding: 3rem 1.5rem; background-color: var(--primary-light);">
+                   <div style="width: 100px; height: 100px; background-color: #28a745; color: #ffffff; font-size: 3rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; margin: 0 auto 1.5rem;">
+                     <i class="fa-solid fa-check-double"></i>
+                   </div>
+                   
+                   <h3 style="font-size: 1.8rem; color: var(--primary); font-weight: 800; margin-bottom: 0.25rem;">CBT Submission Received!</h3>
+                   <p style="font-size: 0.95rem; color: var(--text-muted); margin-bottom: 2rem;">Congratulations, you have completed this test successfully. Your academic grade scorecard was processed live.</p>
+                   
+                   <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; max-width: 500px; margin: 0 auto 2.5rem; background-color: #ffffff; border: 1.5px solid var(--border-color); border-radius: 8px; padding: 1.5rem;">
+                     <div style="border-right: 1.5px solid var(--border-color);">
+                       <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; display: block;">Raw Score</span>
+                       <strong style="font-size: 1.6rem; color: var(--primary);" id="resCardScoreText">12 / 15</strong>
+                     </div>
+                     <div style="border-right: 1.5px solid var(--border-color);">
+                       <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; display: block;">Percentile</span>
+                       <strong style="font-size: 1.6rem; color: var(--secondary);" id="resCardPercentText">80%</strong>
+                     </div>
+                     <div>
+                       <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; display: block;">Letter Grade</span>
+                       <strong style="font-size: 1.6rem; color: #28a745;" id="resCardGradeText">A</strong>
+                     </div>
+                   </div>
+
+                   <button class="btn btn-primary" id="returnCbtRosterBtn" style="padding: 0.75rem 2rem; font-weight: 700; font-size: 0.95rem; border-radius: 6px;"><i class="fa-solid fa-rotate-left"></i> Return to CBT Center</button>
+                 </div>
+
+               </div>
+             </section>
+
             <!-- ============================================
                  PANEL 4: HOMEWORK TASKS
                  ============================================ -->
@@ -737,7 +834,11 @@
       getStudentProfileByAdmission, 
       loginStudent, 
       getNotices,
-      getResultsByStudent
+      getResultsByStudent,
+      getCbtExams,
+      getCbtQuestionsForExam,
+      saveCbtResult,
+      getCbtResultsForStudent
     } from './assets/js/firebase-core.js';
 
     // HTML escape helper
@@ -1336,6 +1437,442 @@
 
       // 5. Notices dynamic loaded from Firestore
       await loadNoticesFeed(sClass);
+
+      // 6. Initialize CBT Exams Center list and play controller
+      await initStudentCbtController(sClass, sName, sAdmNumber);
+    }
+
+    // ==================================================
+    // EXTENSIVE CBT STUDENT ENGINE CONTROLLER
+    // ==================================================
+    let activeTimerInterval = null;
+    let localActiveExamQuestions = [];
+    let studentExamStartTime = null;
+
+    function calculateGradeSymbol(pct) {
+      if (pct >= 80) return "A";
+      if (pct >= 70) return "B";
+      if (pct >= 60) return "C";
+      if (pct >= 50) return "D";
+      if (pct >= 40) return "E";
+      return "F";
+    }
+
+    function getGradeClass(g) {
+      if (g === "A") return "badge-green";
+      if (g === "B" || g === "C") return "badge-blue";
+      if (g === "D" || g === "E") return "badge-orange";
+      return "badge-red";
+    }
+
+    async function initStudentCbtController(studentClass, studentName, admissionNumber) {
+      const studentCbtLoading = document.getElementById("studentCbtLoading");
+      const studentCbtEmpty = document.getElementById("studentCbtEmpty");
+      const studentCbtExamsGrid = document.getElementById("studentCbtExamsGrid");
+
+      const studentCbtRosterView = document.getElementById("studentCbtRosterView");
+      const studentActiveExamView = document.getElementById("studentActiveExamView");
+      const studentCbtResultCard = document.getElementById("studentCbtResultCard");
+
+      // Reset views
+      if (studentCbtRosterView) studentCbtRosterView.style.display = "block";
+      if (studentActiveExamView) studentActiveExamView.style.display = "none";
+      if (studentCbtResultCard) studentCbtResultCard.style.display = "none";
+
+      if (activeTimerInterval) {
+        clearInterval(activeTimerInterval);
+        activeTimerInterval = null;
+      }
+
+      try {
+        if (studentCbtLoading) studentCbtLoading.style.display = "block";
+        if (studentCbtEmpty) studentCbtEmpty.style.display = "none";
+        if (studentCbtExamsGrid) studentCbtExamsGrid.innerHTML = "";
+
+        // Get student's previous results
+        const takenResults = await getCbtResultsForStudent(admissionNumber);
+        const takenExamIds = new Set(takenResults.map(r => r.examId));
+
+        // Get all general published exams
+        const allPublishedExams = await getCbtExams();
+
+        // Filter CBT exams matching student class category
+        const matchClassExams = allPublishedExams.filter(ex => {
+          return (ex.targetClass || '').toLowerCase().trim() === (studentClass || '').toLowerCase().trim();
+        });
+
+        if (studentCbtLoading) studentCbtLoading.style.display = "none";
+
+        if (matchClassExams.length === 0) {
+          if (studentCbtEmpty) studentCbtEmpty.style.display = "block";
+          return;
+        }
+
+        // Render exam cards
+        for (const exam of matchClassExams) {
+          const qs = await getCbtQuestionsForExam(exam.id);
+          const totalQ = qs.length;
+
+          const card = document.createElement("div");
+          card.style.backgroundColor = "#ffffff";
+          card.style.border = "1.5px solid var(--border-color)";
+          card.style.borderRadius = "8px";
+          card.style.padding = "1.5rem";
+          card.style.boxShadow = "var(--shadow-xs)";
+          card.style.display = "flex";
+          card.style.flexDirection = "column";
+          card.style.justifyContent = "space-between";
+
+          // Calculate time state
+          const isTaken = takenExamIds.has(exam.id);
+          const takenRecord = takenResults.find(r => r.examId === exam.id);
+          
+          let stateBadgeColor = "var(--primary-light)";
+          let stateBadgeText = "Upcoming";
+          let actionButtonHtml = "";
+
+          if (isTaken) {
+            stateBadgeColor = "#d4edda";
+            stateBadgeText = `Taken: ${takenRecord.percentage}% Verified`;
+            actionButtonHtml = `
+              <button class="btn btn-outline view-cbt-result-btn" style="flex: 1; padding: 0.6rem 1rem;" data-score="${takenRecord.score}" data-total="${takenRecord.totalQuestions}" data-pct="${takenRecord.percentage}" data-title="${exam.title}">
+                <i class="fa-solid fa-square-poll-vertical"></i> View Scorecard
+              </button>
+            `;
+          } else {
+            // Check if within date and time window
+            const examD = exam.examDate; // YYYY-MM-DD
+            const startT = exam.startTime; // HH:MM
+            const endT = exam.endTime; // HH:MM
+
+            const currentDateTime = new Date();
+            const examStartDateTime = new Date(`${examD}T${startT}`);
+            const examEndDateTime = new Date(`${examD}T${endT}`);
+
+            if (currentDateTime < examStartDateTime) {
+              stateBadgeColor = "#fff3cd";
+              stateBadgeText = "Scheduled / Locked";
+              actionButtonHtml = `
+                <button class="btn btn-outline" style="flex: 1; padding: 0.6rem 1rem;" disabled>
+                  <i class="fa-solid fa-lock"></i> Opens at ${exam.startTime}
+                </button>
+              `;
+            } else if (currentDateTime > examEndDateTime) {
+              stateBadgeColor = "#fee2e2";
+              stateBadgeText = "Closed / Overdue";
+              actionButtonHtml = `
+                <button class="btn btn-outline" style="flex: 1; border-color: #dc3545; color: #dc3545; padding: 0.6rem 1rem;" disabled>
+                  <i class="fa-solid fa-circle-xmark"></i> Exam Window Passed
+                </button>
+              `;
+            } else {
+              stateBadgeColor = "#e0f2fe";
+              stateBadgeText = "Exam Session Active";
+              actionButtonHtml = `
+                <button class="btn start-cbt-btn" style="flex: 1; background-color: #28a745; border-color: #28a745; color: white; font-weight: bold; padding: 0.6rem 1rem;" data-id="${exam.id}">
+                  <i class="fa-solid fa-circle-play"></i> Launch Test Server
+                </button>
+              `;
+            }
+          }
+
+          card.innerHTML = `
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
+                <span style="background-color: ${stateBadgeColor}; color: var(--primary); font-size: 0.7rem; font-weight: bold; padding: 0.25rem 0.5rem; border-radius: 4px; text-transform: uppercase;">
+                  ${stateBadgeText}
+                </span>
+                <span style="font-size: 0.75rem; font-weight: bold; color: var(--text-muted);"><i class="fa-regular fa-clock"></i> ${exam.duration} mins</span>
+              </div>
+              <h4 style="font-size: 1.15rem; font-weight: 850; color: var(--primary); margin-bottom: 0.5rem; line-height: 1.4;">
+                ${exam.title}
+              </h4>
+              <p style="font-size: 0.825rem; color: var(--text-muted); margin-bottom: 1rem;">
+                <strong>Subject:</strong> ${exam.subject} (${exam.term})
+              </p>
+              
+              <div style="background-color: var(--primary-light); padding: 0.75rem; border-radius: 4px; font-size: 0.775rem; color: #555555; line-height: 1.6; margin-bottom: 1.25rem;">
+                <div><i class="fa-regular fa-calendar-days" style="width: 16px; color: var(--secondary);"></i> Date: <strong>${exam.examDate}</strong></div>
+                <div><i class="fa-regular fa-clock" style="width: 16px; color: var(--secondary);"></i> Time Window: <strong>${exam.startTime} - ${exam.endTime}</strong></div>
+                <div><i class="fa-solid fa-clipboard-question" style="width: 16px; color: var(--secondary);"></i> Total: <strong style="color: var(--primary);">${totalQ} objectives</strong></div>
+              </div>
+            </div>
+            
+            <div style="display: flex; gap: 0.5rem;">
+              ${actionButtonHtml}
+            </div>
+          `;
+
+          // Bind scorecard feedback view is taken
+          const resultBtn = card.querySelector(".view-cbt-result-btn");
+          if (resultBtn) {
+            resultBtn.addEventListener("click", () => {
+              const score = resultBtn.getAttribute("data-score");
+              const total = resultBtn.getAttribute("data-total");
+              const pct = resultBtn.getAttribute("data-pct");
+              const title = resultBtn.getAttribute("data-title");
+
+              document.getElementById("resCardScoreText").textContent = `${score} / ${total}`;
+              document.getElementById("resCardPercentText").textContent = `${pct}%`;
+              document.getElementById("resCardGradeText").textContent = calculateGradeSymbol(parseFloat(pct));
+
+              if (studentCbtRosterView) studentCbtRosterView.style.display = "none";
+              if (studentCbtResultCard) studentCbtResultCard.style.display = "block";
+            });
+          }
+
+          // Start exam listener
+          const startBtn = card.querySelector(".start-cbt-btn");
+          if (startBtn) {
+            startBtn.addEventListener("click", () => {
+              if (confirm(`IMPORTANT ASSESSMENT WARNING:\nYou are about to launch "${exam.title}" [${exam.duration} Min duration].\nOnce launched, the clock starts instantly and cannot be paused. Ensure your internet is stable. Do you wish to start?`)) {
+                startCbtSession(exam, qs, studentClass, studentName, admissionNumber);
+              }
+            });
+          }
+
+          if (studentCbtExamsGrid) studentCbtExamsGrid.appendChild(card);
+        }
+
+      } catch (err) {
+        console.error("Failed loading student CBT console roster:", err);
+      }
+    }
+
+    // Launch CBT play arena
+    function startCbtSession(exam, questions, studentClass, studentName, admissionNumber) {
+      const studentCbtRosterView = document.getElementById("studentCbtRosterView");
+      const studentActiveExamView = document.getElementById("studentActiveExamView");
+      const activeExamHeaderTitle = document.getElementById("activeExamHeaderTitle");
+      const activeExamHeaderSubtitle = document.getElementById("activeExamHeaderSubtitle");
+      
+      studentCbtRosterView.style.display = "none";
+      studentActiveExamView.style.display = "block";
+
+      activeExamHeaderTitle.textContent = exam.title;
+      activeExamHeaderSubtitle.textContent = `${questions.length} Questions • ${exam.duration} Minutes • Class: ${studentClass}`;
+
+      localActiveExamQuestions = questions;
+      studentExamStartTime = Date.now();
+
+      // Clear layout and draw MCQ options
+      const activeQuestionsPlayList = document.getElementById("activeQuestionsPlayList");
+      activeQuestionsPlayList.innerHTML = "";
+
+      // Quick Completion visual palette tracker
+      const questionsPaletteContainer = document.getElementById("questionsPaletteContainer");
+      questionsPaletteContainer.innerHTML = "";
+
+      questions.forEach((q, index) => {
+        // Create navigation tracker element node
+        const node = document.createElement("button");
+        node.type = "button";
+        node.id = `palette-node-${q.id}`;
+        node.style.width = "38px";
+        node.style.height = "38px";
+        node.style.borderRadius = "50%";
+        node.style.border = "1.5px solid var(--border-color)";
+        node.style.backgroundColor = "#ffffff";
+        node.style.color = "var(--text-dark)";
+        node.style.fontWeight = "bold";
+        node.style.fontSize = "0.85rem";
+        node.style.cursor = "pointer";
+        node.textContent = index + 1;
+        node.addEventListener("click", () => {
+          document.getElementById(`play-card-${q.id}`).scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+        questionsPaletteContainer.appendChild(node);
+
+        const card = document.createElement("div");
+        card.id = `play-card-${q.id}`;
+        card.style.backgroundColor = "#ffffff";
+        card.style.border = "1px solid var(--border-color)";
+        card.style.borderRadius = "8px";
+        card.style.padding = "1.5rem";
+        card.style.marginBottom = "1.5rem";
+
+        card.innerHTML = `
+          <strong style="color: var(--primary); font-size: 0.9rem; margin-bottom: 0.5rem; display:block;">Objective Question ${index + 1} of ${questions.length}</strong>
+          <p style="font-size: 1.1rem; font-weight: 700; color: var(--text-dark); margin-bottom: 1.25rem;">${escapeHTML(q.questionText)}</p>
+          
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <label class="cbt-choice-option" style="display: flex; align-items: center; gap: 0.75rem; border: 1.5px solid var(--border-color); padding: 0.85rem 1.25rem; border-radius: 6px; cursor: pointer; transition: background-color 0.2s;">
+              <input type="radio" name="opt-${q.id}" value="A" style="transform: scale(1.15);">
+              <span style="font-size: 0.95rem;"><strong>A:</strong> ${escapeHTML(q.options.A)}</span>
+            </label>
+            <label class="cbt-choice-option" style="display: flex; align-items: center; gap: 0.75rem; border: 1.5px solid var(--border-color); padding: 0.85rem 1.25rem; border-radius: 6px; cursor: pointer; transition: background-color 0.2s;">
+              <input type="radio" name="opt-${q.id}" value="B" style="transform: scale(1.15);">
+              <span style="font-size: 0.95rem;"><strong>B:</strong> ${escapeHTML(q.options.B)}</span>
+            </label>
+            <label class="cbt-choice-option" style="display: flex; align-items: center; gap: 0.75rem; border: 1.5px solid var(--border-color); padding: 0.85rem 1.25rem; border-radius: 6px; cursor: pointer; transition: background-color 0.2s;">
+              <input type="radio" name="opt-${q.id}" value="C" style="transform: scale(1.15);">
+              <span style="font-size: 0.95rem;"><strong>C:</strong> ${escapeHTML(q.options.C)}</span>
+            </label>
+            <label class="cbt-choice-option" style="display: flex; align-items: center; gap: 0.75rem; border: 1.5px solid var(--border-color); padding: 0.85rem 1.25rem; border-radius: 6px; cursor: pointer; transition: background-color 0.2s;">
+              <input type="radio" name="opt-${q.id}" value="D" style="transform: scale(1.15);">
+              <span style="font-size: 0.95rem;"><strong>D:</strong> ${escapeHTML(q.options.D)}</span>
+            </label>
+          </div>
+        `;
+
+        // Watch selection change to flag visual completion node
+        const rInputList = card.querySelectorAll(`input[name="opt-${q.id}"]`);
+        rInputList.forEach(radio => {
+          radio.addEventListener("change", () => {
+            // Highlight matching node in palette
+            node.style.backgroundColor = "var(--primary)";
+            node.style.color = "#ffffff";
+            node.style.borderColor = "var(--primary)";
+
+            // Highlight chosen label visual wrapper
+            const familyLabels = card.querySelectorAll(".cbt-choice-option");
+            familyLabels.forEach(lbl => {
+              lbl.style.backgroundColor = "#ffffff";
+              lbl.style.borderColor = "var(--border-color)";
+              lbl.style.fontWeight = "normal";
+            });
+            const clickedWrapper = radio.closest(".cbt-choice-option");
+            clickedWrapper.style.backgroundColor = "var(--primary-light)";
+            clickedWrapper.style.borderColor = "var(--primary)";
+            clickedWrapper.style.fontWeight = "bold";
+          });
+        });
+
+        activeQuestionsPlayList.appendChild(card);
+      });
+
+      // Start countdown timer sequence
+      let totalSeconds = exam.duration * 60;
+      const activeTimerText = document.getElementById("activeTimerText");
+
+      if (activeTimerInterval) clearInterval(activeTimerInterval);
+
+      activeTimerInterval = setInterval(() => {
+        totalSeconds--;
+        
+        let hrs = Math.floor(totalSeconds / 3600);
+        let mins = Math.floor((totalSeconds % 3600) / 60);
+        let secs = totalSeconds % 60;
+
+        let displayTime = "";
+        if (hrs > 0) {
+          displayTime += (hrs < 10 ? "0" + hrs : hrs) + ":";
+        }
+        displayTime += (mins < 10 ? "0" + mins : mins) + ":" + (secs < 10 ? "0" + secs : secs);
+        activeTimerText.textContent = displayTime;
+
+        if (totalSeconds <= 60) {
+          activeTimerText.style.color = "#dc3545";
+          activeTimerText.style.fontWeight = "bold";
+        }
+
+        if (totalSeconds <= 0) {
+          clearInterval(activeTimerInterval);
+          alert("ATTENTION:\nTime has expired! Your academic responses will now be consolidated and submitted automatically.");
+          evaluateAndSubmitCbt(exam, questions, studentClass, studentName, admissionNumber);
+        }
+      }, 1000);
+
+      // Handle Cancel and Exit early click
+      const earlyExitExamBtn = document.getElementById("earlyExitExamBtn");
+      if (earlyExitExamBtn) {
+        earlyExitExamBtn.onclick = () => {
+          if (confirm("WARNING: Cancelling this test terminates the session instantly. Any incomplete answers will NOT be counted, and you cannot retry the exam. Exit play area?")) {
+            clearInterval(activeTimerInterval);
+            initStudentCbtController(studentClass, studentName, admissionNumber);
+          }
+        };
+      }
+
+      // Handle Form Submit Event explicitly
+      const studentExamPlayForm = document.getElementById("studentExamPlayForm");
+      if (studentExamPlayForm) {
+        studentExamPlayForm.onsubmit = (e) => {
+          e.preventDefault();
+          if (confirm("Are you sure you want to finish and submit your exam now? This is final.")) {
+            clearInterval(activeTimerInterval);
+            evaluateAndSubmitCbt(exam, questions, studentClass, studentName, admissionNumber);
+          }
+        };
+      }
+    }
+
+    // Evaluate answers score, compile database result object, and push to Firestore
+    async function evaluateAndSubmitCbt(exam, questions, studentClass, studentName, admissionNumber) {
+      const studentActiveExamView = document.getElementById("studentActiveExamView");
+      const studentCbtResultCard = document.getElementById("studentCbtResultCard");
+      const submitCbtExamBtn = document.getElementById("submitCbtExamBtn");
+
+      if (submitCbtExamBtn) {
+        submitCbtExamBtn.disabled = true;
+        submitCbtExamBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Finalizing Submission...';
+      }
+
+      try {
+        let score = 0;
+        const totalQuestions = questions.length;
+        const answersPayloadList = [];
+
+        questions.forEach(q => {
+          const optSelectedInput = document.querySelector(`input[name="opt-${q.id}"]:checked`);
+          const studentSelectionChoice = optSelectedInput ? optSelectedInput.value : "";
+          const isCorrectChoice = studentSelectionChoice === q.correctAnswer;
+
+          if (isCorrectChoice) score++;
+
+          answersPayloadList.push({
+            questionId: q.id,
+            questionText: q.questionText,
+            selectedAnswer: studentSelectionChoice,
+            correctAnswer: q.correctAnswer,
+            isCorrect: isCorrectChoice
+          });
+        });
+
+        // Compute percentage score
+        const percentage = totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0;
+        const gradeSymbolValue = calculateGradeSymbol(percentage);
+
+        // Save detailed results to Firestore
+        const resultPayload = {
+          examId: exam.id,
+          examTitle: exam.title,
+          admissionNumber: admissionNumber,
+          studentName: studentName,
+          studentClass: studentClass,
+          subject: exam.subject,
+          term: exam.term,
+          session: exam.session || "2025/2026",
+          score: score,
+          totalQuestions: totalQuestions,
+          percentage: percentage,
+          answers: answersPayloadList,
+          timestamp: new Date().toISOString()
+        };
+
+        await saveCbtResult(resultPayload);
+
+        // Output results on scorecard UI
+        document.getElementById("resCardScoreText").textContent = `${score} / ${totalQuestions}`;
+        document.getElementById("resCardPercentText").textContent = `${percentage}%`;
+        document.getElementById("resCardGradeText").textContent = gradeSymbolValue;
+
+        studentActiveExamView.style.display = "none";
+        studentCbtResultCard.style.display = "block";
+
+        // Bind scorecard dismiss button
+        document.getElementById("returnCbtRosterBtn").onclick = () => {
+          initStudentCbtController(studentClass, studentName, admissionNumber);
+        };
+
+      } catch (err) {
+        console.error("CBT Submission processing failed:", err);
+        alert("Submission sync error: " + err.message);
+        if (submitCbtExamBtn) {
+          submitCbtExamBtn.disabled = false;
+          submitCbtExamBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Submit Examination Now';
+        }
+      }
     }
 
     // Query active notice bulletins

@@ -1673,3 +1673,280 @@ export const saveTeacherResult = async (payload) => {
   }
 };
 
+// ==========================================
+// CBT COMPUTER-BASED TEST SYSTEM HELPERS
+// ==========================================
+
+export const saveCbtExam = async (examPayload) => {
+  if (!db) throw new Error("Firestore not initialized.");
+  try {
+    const colRef = sdkFirestore.collection(db, "cbt_exams");
+    let docId = examPayload.id;
+    if (!docId) {
+      docId = 'EXAM-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+    }
+    const docRef = sdkFirestore.doc(db, "cbt_exams", docId);
+    
+    const record = {
+      id: docId,
+      examTitle: examPayload.examTitle || "",
+      subject: examPayload.subject || "",
+      class: examPayload.class || "",
+      academicSession: examPayload.academicSession || "2025/2026",
+      term: examPayload.term || "First Term",
+      examDate: examPayload.examDate || "",
+      startTime: examPayload.startTime || "",
+      endTime: examPayload.endTime || "",
+      duration: Number(examPayload.duration) || 60,
+      published: examPayload.published !== undefined ? examPayload.published : false,
+      createdAt: examPayload.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    await sdkFirestore.setDoc(docRef, record, { merge: true });
+    return { success: true, docId };
+  } catch (err) {
+    console.error("Error saving CBT Exam:", err);
+    throw err;
+  }
+};
+
+export const deleteCbtExam = async (examId) => {
+  if (!db) throw new Error("Firestore not initialized.");
+  try {
+    const docRef = sdkFirestore.doc(db, "cbt_exams", examId);
+    await sdkFirestore.deleteDoc(docRef);
+    
+    // Also delete any associated questions in cbt_questions
+    const colRef = sdkFirestore.collection(db, "cbt_questions");
+    const q1 = sdkFirestore.query(colRef, sdkFirestore.where("examId", "==", examId));
+    const snap = await sdkFirestore.getDocs(q1);
+    const deletePromises = [];
+    snap.forEach(doc => {
+      deletePromises.push(sdkFirestore.deleteDoc(doc.ref));
+    });
+    await Promise.all(deletePromises);
+    
+    return { success: true };
+  } catch (err) {
+    console.error("Error deleting CBT Exam and questions:", err);
+    throw err;
+  }
+};
+
+export const getCbtExams = async () => {
+  if (!db) throw new Error("Firestore not initialized.");
+  try {
+    const colRef = sdkFirestore.collection(db, "cbt_exams");
+    const snap = await sdkFirestore.getDocs(colRef);
+    const exams = [];
+    snap.forEach(doc => {
+      exams.push(doc.data());
+    });
+    return exams;
+  } catch (err) {
+    console.error("Error getting CBT Exams:", err);
+    throw err;
+  }
+};
+
+export const getCbtExamsByClass = async (studentClass) => {
+  if (!db) throw new Error("Firestore not initialized.");
+  try {
+    const colRef = sdkFirestore.collection(db, "cbt_exams");
+    const q1 = sdkFirestore.query(colRef, sdkFirestore.where("class", "==", studentClass));
+    const snap = await sdkFirestore.getDocs(q1);
+    const exams = [];
+    snap.forEach(doc => {
+      exams.push(doc.data());
+    });
+    return exams;
+  } catch (err) {
+    console.error("Error getting CBT Exams by Class:", err);
+    throw err;
+  }
+};
+
+export const saveCbtQuestion = async (questionPayload) => {
+  if (!db) throw new Error("Firestore not initialized.");
+  try {
+    const colRef = sdkFirestore.collection(db, "cbt_questions");
+    let docId = questionPayload.id;
+    if (!docId) {
+      docId = 'QUES-' + Date.now() + '-' + Math.floor(Math.random() * 10000);
+    }
+    const docRef = sdkFirestore.doc(db, "cbt_questions", docId);
+    
+    const record = {
+      id: docId,
+      examId: questionPayload.examId,
+      questionText: questionPayload.questionText || "",
+      optionA: questionPayload.optionA || "",
+      optionB: questionPayload.optionB || "",
+      optionC: questionPayload.optionC || "",
+      optionD: questionPayload.optionD || "",
+      correctAnswer: questionPayload.correctAnswer || "A", // A, B, C, D
+      updatedAt: new Date().toISOString()
+    };
+    
+    await sdkFirestore.setDoc(docRef, record, { merge: true });
+    return { success: true, docId };
+  } catch (err) {
+    console.error("Error saving CBT Question:", err);
+    throw err;
+  }
+};
+
+export const deleteCbtQuestion = async (questionId) => {
+  if (!db) throw new Error("Firestore not initialized.");
+  try {
+    const docRef = sdkFirestore.doc(db, "cbt_questions", questionId);
+    await sdkFirestore.deleteDoc(docRef);
+    return { success: true };
+  } catch (err) {
+    console.error("Error deleting CBT Question:", err);
+    throw err;
+  }
+};
+
+export const getCbtQuestionsForExam = async (examId) => {
+  if (!db) throw new Error("Firestore not initialized.");
+  try {
+    const colRef = sdkFirestore.collection(db, "cbt_questions");
+    const q1 = sdkFirestore.query(colRef, sdkFirestore.where("examId", "==", examId));
+    const snap = await sdkFirestore.getDocs(q1);
+    const questions = [];
+    snap.forEach(doc => {
+      questions.push(doc.data());
+    });
+    return questions;
+  } catch (err) {
+    console.error("Error getting CBT Questions for Exam:", err);
+    throw err;
+  }
+};
+
+export const saveCbtAnswers = async (answerPayload) => {
+  if (!db) throw new Error("Firestore not initialized.");
+  try {
+    const docId = `${answerPayload.admissionNumber.toUpperCase().trim()}_${answerPayload.examId}`;
+    const docRef = sdkFirestore.doc(db, "cbt_answers", docId);
+    
+    const record = {
+      id: docId,
+      admissionNumber: answerPayload.admissionNumber.toUpperCase().trim(),
+      examId: answerPayload.examId,
+      answers: answerPayload.answers || {}, // questionId -> chosen answer mapping
+      status: answerPayload.status || "saved", // "saved" or "submitted"
+      lastUpdatedAt: new Date().toISOString()
+    };
+    
+    await sdkFirestore.setDoc(docRef, record, { merge: true });
+    return { success: true, docId };
+  } catch (err) {
+    console.error("Error saving CBT Answers:", err);
+    throw err;
+  }
+};
+
+export const getCbtAnswersForStudentAndExam = async (admissionNumber, examId) => {
+  if (!db) throw new Error("Firestore not initialized.");
+  try {
+    const docId = `${admissionNumber.toUpperCase().trim()}_${examId}`;
+    const docRef = sdkFirestore.doc(db, "cbt_answers", docId);
+    const snap = await sdkFirestore.getDoc(docRef);
+    if (snap.exists()) {
+      return snap.data();
+    }
+    return null;
+  } catch (err) {
+    console.error("Error getting CBT Answers for Student:", err);
+    throw err;
+  }
+};
+
+export const saveCbtResult = async (resultPayload) => {
+  if (!db) throw new Error("Firestore not initialized.");
+  try {
+    const docId = `${resultPayload.admissionNumber.toUpperCase().trim()}_${resultPayload.examId}`;
+    const docRef = sdkFirestore.doc(db, "cbt_results", docId);
+    
+    const record = {
+      id: docId,
+      studentName: resultPayload.studentName || "Unspecified student",
+      admissionNumber: resultPayload.admissionNumber.toUpperCase().trim(),
+      class: resultPayload.class || "",
+      examId: resultPayload.examId,
+      examTitle: resultPayload.examTitle || "",
+      subject: resultPayload.subject || "",
+      academicSession: resultPayload.academicSession || "2025/2026",
+      term: resultPayload.term || "First Term",
+      totalQuestions: Number(resultPayload.totalQuestions) || 0,
+      correctAnswers: Number(resultPayload.correctAnswers) || 0,
+      wrongAnswers: Number(resultPayload.wrongAnswers) || 0,
+      percentageScore: Number(resultPayload.percentageScore) || 0,
+      grade: resultPayload.grade || "F",
+      status: resultPayload.status || "FAIL", // PASS or FAIL
+      dateWritten: resultPayload.dateWritten || new Date().toISOString(),
+      insertedIntoResults: resultPayload.insertedIntoResults !== undefined ? resultPayload.insertedIntoResults : false,
+      updatedAt: new Date().toISOString()
+    };
+    
+    await sdkFirestore.setDoc(docRef, record, { merge: true });
+    return { success: true, docId };
+  } catch (err) {
+    console.error("Error saving CBT Result:", err);
+    throw err;
+  }
+};
+
+export const getCbtResultsForStudent = async (admissionNumber) => {
+  if (!db) throw new Error("Firestore not initialized.");
+  try {
+    const colRef = sdkFirestore.collection(db, "cbt_results");
+    const q1 = sdkFirestore.query(colRef, sdkFirestore.where("admissionNumber", "==", admissionNumber.toUpperCase().trim()));
+    const snap = await sdkFirestore.getDocs(q1);
+    const results = [];
+    snap.forEach(doc => {
+      results.push(doc.data());
+    });
+    return results;
+  } catch (err) {
+    console.error("Error getting CBT Results for Student:", err);
+    throw err;
+  }
+};
+
+export const getCbtResultsForExam = async (examId) => {
+  if (!db) throw new Error("Firestore not initialized.");
+  try {
+    const colRef = sdkFirestore.collection(db, "cbt_results");
+    const q1 = sdkFirestore.query(colRef, sdkFirestore.where("examId", "==", examId));
+    const snap = await sdkFirestore.getDocs(q1);
+    const results = [];
+    snap.forEach(doc => {
+      results.push(doc.data());
+    });
+    return results;
+  } catch (err) {
+    console.error("Error getting CBT Results for Exam:", err);
+    throw err;
+  }
+};
+
+export const getAllCbtResults = async () => {
+  if (!db) throw new Error("Firestore not initialized.");
+  try {
+    const colRef = sdkFirestore.collection(db, "cbt_results");
+    const snap = await sdkFirestore.getDocs(colRef);
+    const results = [];
+    snap.forEach(doc => {
+      results.push(doc.data());
+    });
+    return results;
+  } catch (err) {
+    console.error("Error getting All CBT Results:", err);
+    throw err;
+  }
+};
+
