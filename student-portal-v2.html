@@ -13,6 +13,7 @@
   
   <!-- Custom Stylesheet -->
   <link rel="stylesheet" href="assets/css/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     body {
       background-color: var(--bg-slate);
@@ -253,6 +254,7 @@
       <!-- Desktop Portal Buttons -->
       <div class="nav-cta">
         <a href="student-portal-v2.html" class="btn btn-primary"><i class="fa-solid fa-user-graduate"></i> Student Portal</a>
+        <a href="teacher-portal.html" class="btn btn-outline"><i class="fa-solid fa-chalkboard-user"></i> Teacher Portal</a>
         <a href="admin-portal-v2.html" class="btn btn-outline"><i class="fa-solid fa-shield-halved"></i> Admin Portal</a>
       </div>
 
@@ -273,6 +275,7 @@
       <li><a href="admissions.html" class="nav-link">Admissions</a></li>
       <li><a href="contact.html" class="nav-link">Contact Us</a></li>
       <li><a href="student-portal-v2.html" class="nav-link active"><i class="fa-solid fa-user-graduate"></i> Student Portal</a></li>
+      <li><a href="teacher-portal.html" class="nav-link"><i class="fa-solid fa-chalkboard-user"></i> Teacher Portal</a></li>
       <li><a href="admin-portal-v2.html" class="nav-link"><i class="fa-solid fa-shield-halved"></i> Admin Portal</a></li>
     </ul>
   </div>
@@ -543,23 +546,42 @@
                  ============================================ -->
             <section id="results-tab-content" class="portal-section-view">
               <div class="profile-section-card" style="margin-bottom: 1.5rem;">
-                <div class="d-flex justify-between align-center" style="margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;">
-                  <h3 style="font-size: 1.25rem; color: var(--primary); font-weight: 800; margin: 0;"><i class="fa-solid fa-square-poll-vertical"></i> Academic Standing Report Sheet</h3>
+                <div class="d-flex justify-between align-center" style="margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.5rem;">
+                  <div>
+                    <h3 style="font-size: 1.25rem; color: var(--primary); font-weight: 800; margin: 0;"><i class="fa-solid fa-square-poll-vertical"></i> Academic Standing Report Sheet</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.15rem;">Select an academic term below to review and download your scores.</p>
+                  </div>
                   <span class="badge" style="background-color: var(--primary-light); color: var(--primary); font-weight: 800; padding: 0.35rem 1rem;">Official Registry Copy</span>
                 </div>
 
-                <div style="display: flex; gap: 2rem; flex-wrap: wrap; margin-bottom: 1.5rem; background-color: var(--primary-light); padding: 1.25rem; border-radius: var(--border-radius-sm);">
+                <!-- Term and Action selectors -->
+                <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                  <div style="min-width: 220px;">
+                    <select class="form-control-select" id="studentTermSelect" style="width: 100%; padding: 0.6rem 1rem; border: 1.5px solid var(--border-color); border-radius: var(--border-radius-sm);">
+                      <option value="First Term">First Term</option>
+                      <option value="Second Term">Second Term</option>
+                      <option value="Third Term" selected>Third Term</option>
+                    </select>
+                  </div>
+                  <button class="btn btn-accent" id="downloadPdfBtn" style="padding: 0.65rem 1.25rem; font-weight: 800;"><i class="fa-solid fa-file-pdf" style="margin-right: 0.35rem;"></i> Download Result PDF</button>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; background-color: var(--primary-light); padding: 1.25rem; border-radius: var(--border-radius-sm);">
                   <div>
                     <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;">Termly Grading Policy</span>
-                    <p style="font-size: 1.15rem; font-weight: 800; color: var(--primary);">40% Class CA + 60% Exam Score</p>
+                    <p style="font-size: 1.15rem; font-weight: 800; color: var(--primary);">30% CA Test + 70% Terminal Exam</p>
                   </div>
                   <div>
-                    <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;">Aggregated Average</span>
-                    <p style="font-size: 1.15rem; font-weight: 800; color: var(--secondary);" id="repAverageText">86.4% (Outstanding)</p>
+                    <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;">Term Class Average</span>
+                    <p style="font-size: 1.15rem; font-weight: 800; color: var(--secondary);" id="repAverageText">... Calculating</p>
                   </div>
-                  <div>
-                    <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;">Attendance Rate</span>
-                    <p style="font-size: 1.15rem; font-weight: 800; color: var(--accent);">98.5% (Commendable)</p>
+                  <div id="annualAverageStatBox" style="display: none;">
+                    <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;">Annual Average (First + Second + Third)</span>
+                    <p style="font-size: 1.15rem; font-weight: 800; color: var(--accent);" id="annualAverageText">-</p>
+                  </div>
+                  <div id="promotionStatBox" style="display: none;">
+                    <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;">Promotion Outcome</span>
+                    <p style="font-size: 1.15rem; font-weight: 800; color: #16a34a;" id="promotionStatusText">-</p>
                   </div>
                 </div>
 
@@ -569,10 +591,10 @@
                     <thead>
                       <tr>
                         <th>Subject Course Item</th>
-                        <th style="text-align: center;">CA Marks (40)</th>
-                        <th style="text-align: center;">Exam Score (60)</th>
-                        <th style="text-align: center;">Total (100)</th>
-                        <th style="text-align: center;">Grade Rating</th>
+                        <th style="text-align: center; width: 151px;">CA Test Score (30)</th>
+                        <th style="text-align: center; width: 151px;">Exam Score (70)</th>
+                        <th style="text-align: center; width: 151px;">Total (100)</th>
+                        <th style="text-align: center; width: 151px;">Grade Rating</th>
                       </tr>
                     </thead>
                     <tbody id="studentGradesV2Body">
@@ -582,8 +604,8 @@
                 </div>
 
                 <div style="border-top: 1.5px solid var(--border-color); padding-top: 1.25rem; font-size: 0.95rem; color: var(--text-dark); background-color: #fafbfc; border-radius: 6px; padding: 1.25rem; margin-top: 1.5rem; line-height: 1.5;">
-                  <strong>Remarks of level advisor counselor:</strong>
-                  <p style="font-style: italic; color: var(--text-muted); margin-top: 0.25rem;" id="coachRemarksV2Text">"No custom comments logged yet. Keep studying hard!"</p>
+                  <strong>Remarks of class level supervisor:</strong>
+                  <p style="font-style: italic; color: var(--text-muted); margin-top: 0.25rem;" id="coachRemarksV2Text">"Always strive for educational excellence. Maintain consistent standards and studies!"</p>
                 </div>
               </div>
             </section>
@@ -714,7 +736,8 @@
       logoutStudent, 
       getStudentProfileByAdmission, 
       loginStudent, 
-      getNotices 
+      getNotices,
+      getResultsByStudent
     } from './assets/js/firebase-core.js';
 
     // HTML escape helper
@@ -792,7 +815,7 @@
         if (panelsContainer) panelsContainer.style.display = 'block';
 
         // 4. Populate dynamic data values inside the panel screens
-        renderStudentConsole(studentProfile, session);
+        await renderStudentConsole(studentProfile, session);
 
       } catch (err) {
         console.error("V2 Automated Profile Loading Failure:", err);
@@ -990,74 +1013,296 @@
       document.getElementById('profParAddress').textContent = pAddressValue;
 
       // 3. Termly Results Tab Data Values
-      const grades = profile.grades || { english: 85, math: 80, computer: 90, civic: 95, agriculture: 75 };
-      const avgValue = ((Number(grades.english) + Number(grades.math) + Number(grades.computer) + Number(grades.civic) + Number(grades.agriculture)) / 5).toFixed(1);
-      
-      let levelGrading = "Merit";
-      if (avgValue >= 90) levelGrading = "Outstanding Merit";
-      else if (avgValue >= 80) levelGrading = "Outstanding Class Performance";
-      else if (avgValue >= 70) levelGrading = "Very Good standing";
-      else if (avgValue >= 50) levelGrading = "Satisfactory Progress";
-      else levelGrading = "Needs Support Review";
+      let studentResults = [];
+      try {
+        studentResults = await getResultsByStudent(sAdmNumber);
+        console.log("Verified database academic results records loaded:", studentResults);
+      } catch (e) {
+        console.error("Failed to load official results:", e);
+      }
 
-      document.getElementById('repAverageText').textContent = `${avgValue}% (${levelGrading})`;
-      document.getElementById('dashAverageScore').textContent = `${avgValue}% (${levelGrading})`;
+      const termSelectElem = document.getElementById('studentTermSelect');
+      const studentGradesV2Body = document.getElementById('studentGradesV2Body');
+      const repAverageText = document.getElementById('repAverageText');
+      const annualBox = document.getElementById('annualAverageStatBox');
+      const annualText = document.getElementById('annualAverageText');
+      const promoBox = document.getElementById('promotionStatBox');
+      const promotionStatusText = document.getElementById('promotionStatusText');
 
-      const getGradeTagSymbol = (m) => {
-        if (m >= 90) return 'A+';
-        if (m >= 80) return 'A';
-        if (m >= 70) return 'B+';
-        if (m >= 60) return 'B';
-        if (m >= 50) return 'C';
-        return 'F';
+      const refreshResultsUI = () => {
+        const selectedTerm = termSelectElem.value;
+        if (!studentGradesV2Body) return;
+        studentGradesV2Body.innerHTML = "";
+
+        if (!studentResults || studentResults.length === 0) {
+          studentGradesV2Body.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 2.5rem; color: var(--text-muted);"><i class="fa-solid fa-folder-open" style="font-size: 2rem; margin-bottom: 0.75rem; display:block; color:var(--primary-light);"></i> No published academic scores found for this term yet. Please consult with the classroom level instructor.</td></tr>`;
+          if (repAverageText) repAverageText.textContent = "Pending Publication";
+          if (annualBox) annualBox.style.display = "none";
+          if (promoBox) promoBox.style.display = "none";
+          return;
+        }
+
+        let termTotalsSum = 0;
+        let subjectsCount = 0;
+        let hasPromotionInfo = "None";
+        let annualAveragesSum = 0;
+        let annualAveragesCount = 0;
+
+        studentResults.forEach(res => {
+          let termScoreObj = null;
+          if (selectedTerm === "First Term") termScoreObj = res.firstTerm;
+          else if (selectedTerm === "Second Term") termScoreObj = res.secondTerm;
+          else if (selectedTerm === "Third Term") termScoreObj = res.thirdTerm;
+
+          if (res.promotionStatus && res.promotionStatus !== "None") {
+            hasPromotionInfo = res.promotionStatus;
+          }
+
+          if (res.annualAverage !== null && res.annualAverage !== undefined && res.annualAverage !== "") {
+             annualAveragesSum += Number(res.annualAverage);
+             annualAveragesCount++;
+          }
+
+          const tr = document.createElement("tr");
+          if (termScoreObj && (termScoreObj.total !== null && termScoreObj.total !== undefined && termScoreObj.total !== "")) {
+            const test = termScoreObj.test !== null && termScoreObj.test !== undefined ? termScoreObj.test : "-";
+            const exam = termScoreObj.exam !== null && termScoreObj.exam !== undefined ? termScoreObj.exam : "-";
+            const total = termScoreObj.total !== null && termScoreObj.total !== undefined ? termScoreObj.total : "-";
+            const grade = termScoreObj.grade || "-";
+
+            termTotalsSum += Number(total);
+            subjectsCount++;
+
+            tr.innerHTML = `
+              <td><strong>${escapeHTML(res.subject)}</strong></td>
+              <td style="text-align: center;">${test}</td>
+              <td style="text-align: center;">${exam}</td>
+              <td style="text-align: center; font-weight: 700;">${total}</td>
+              <td style="text-align: center;"><span class="badge" style="background-color: var(--primary-light); color: var(--primary); font-weight:800; padding:0.35rem 0.75rem;">${grade}</span></td>
+            `;
+          } else {
+            tr.innerHTML = `
+              <td><strong>${escapeHTML(res.subject)}</strong></td>
+              <td style="text-align: center;">-</td>
+              <td style="text-align: center;">-</td>
+              <td style="text-align: center; font-weight: 700;">-</td>
+              <td style="text-align: center;"><span class="badge" style="background-color:#fee2e2; color:#991b1b; padding:0.35rem 0.75rem; font-weight:800;">Pending</span></td>
+            `;
+          }
+          studentGradesV2Body.appendChild(tr);
+        });
+
+        // Compute term class average
+        if (subjectsCount > 0) {
+          const avg = (termTotalsSum / subjectsCount).toFixed(1);
+          let ratingText = "Needs Study";
+          if (avg >= 80) ratingText = "Outstanding Performance";
+          else if (avg >= 70) ratingText = "Very Good standing";
+          else if (avg >= 50) ratingText = "Satisfactory Progress";
+          
+          if (repAverageText) repAverageText.textContent = `${avg}% (${ratingText})`;
+          if (document.getElementById('dashAverageScore')) {
+            document.getElementById('dashAverageScore').textContent = `${avg}% (${ratingText})`;
+          }
+        } else {
+          if (repAverageText) repAverageText.textContent = "Pending Publication";
+        }
+
+        // Show/hide annual results boxes if at third term
+        if (selectedTerm === "Third Term" && annualAveragesCount > 0) {
+          if (annualBox) annualBox.style.display = "block";
+          const finalAnnualAvg = (annualAveragesSum / annualAveragesCount).toFixed(1);
+          if (annualText) annualText.textContent = `${finalAnnualAvg}%`;
+          
+          if (hasPromotionInfo !== "None") {
+            if (promoBox) promoBox.style.display = "block";
+            if (promotionStatusText) {
+              promotionStatusText.textContent = hasPromotionInfo;
+              if (hasPromotionInfo === "Promoted") {
+                promotionStatusText.style.color = "#16a34a";
+              } else {
+                promotionStatusText.style.color = "#dc2626";
+              }
+            }
+          } else {
+            if (promoBox) promoBox.style.display = "none";
+          }
+        } else {
+          if (annualBox) annualBox.style.display = "none";
+          if (promoBox) promoBox.style.display = "none";
+        }
       };
 
-      const formatV2CA = (tot) => Math.round(Number(tot) * 0.4);
-      const formatV2Exam = (tot) => Math.round(Number(tot) * 0.6);
+      if (termSelectElem) {
+        // Clear previous listeners by replacing element or just assigning onchange
+        termSelectElem.onchange = refreshResultsUI;
+      }
+      refreshResultsUI();
 
-      const studentGradesV2Body = document.getElementById('studentGradesV2Body');
-      if (studentGradesV2Body) {
-        studentGradesV2Body.innerHTML = `
-          <tr>
-            <td><strong>English Language & Phonics</strong></td>
-            <td style="text-align: center;">${formatV2CA(grades.english)}</td>
-            <td style="text-align: center;">${formatV2Exam(grades.english)}</td>
-            <td style="text-align: center; font-weight: 700;">${grades.english}</td>
-            <td style="text-align: center;"><span class="score-grade" style="color:var(--primary); font-weight:800;">${getGradeTagSymbol(grades.english)}</span></td>
-          </tr>
-          <tr>
-            <td><strong>Quantitative Mathematics</strong></td>
-            <td style="text-align: center;">${formatV2CA(grades.math)}</td>
-            <td style="text-align: center;">${formatV2Exam(grades.math)}</td>
-            <td style="text-align: center; font-weight: 700;">${grades.math}</td>
-            <td style="text-align: center;"><span class="score-grade" style="color:var(--primary); font-weight:800;">${getGradeTagSymbol(grades.math)}</span></td>
-          </tr>
-          <tr>
-            <td><strong>Computer Literacy Basics</strong></td>
-            <td style="text-align: center;">${formatV2CA(grades.computer)}</td>
-            <td style="text-align: center;">${formatV2Exam(grades.computer)}</td>
-            <td style="text-align: center; font-weight: 700;">${grades.computer}</td>
-            <td style="text-align: center;"><span class="score-grade" style="color:var(--primary); font-weight:800;">${getGradeTagSymbol(grades.computer)}</span></td>
-          </tr>
-          <tr>
-            <td><strong>Civic & Christian Characters</strong></td>
-            <td style="text-align: center;">${formatV2CA(grades.civic)}</td>
-            <td style="text-align: center;">${formatV2Exam(grades.civic)}</td>
-            <td style="text-align: center; font-weight: 700;">${grades.civic}</td>
-            <td style="text-align: center;"><span class="score-grade" style="color:var(--primary); font-weight:800;">${getGradeTagSymbol(grades.civic)}</span></td>
-          </tr>
-          <tr>
-            <td><strong>Agricultural Sciences</strong></td>
-            <td style="text-align: center;">${formatV2CA(grades.agriculture)}</td>
-            <td style="text-align: center;">${formatV2Exam(grades.agriculture)}</td>
-            <td style="text-align: center; font-weight: 700;">${grades.agriculture}</td>
-            <td style="text-align: center;"><span class="score-grade" style="color:var(--primary); font-weight:800;">${getGradeTagSymbol(grades.agriculture)}</span></td>
-          </tr>
-        `;
+      // Download PDF Event Listener Setup
+      const downloadBtn = document.getElementById('downloadPdfBtn');
+      if (downloadBtn) {
+        downloadBtn.onclick = () => {
+          const selectedTerm = termSelectElem ? termSelectElem.value : "Third Term";
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF('p', 'mm', 'a4');
+
+          // Header Block Colors & Borders
+          doc.setFillColor(15, 23, 42); // slate dark --primary
+          doc.rect(0, 0, 210, 42, 'F');
+
+          // Header Brand text
+          doc.setTextColor(255, 255, 255);
+          doc.setFont("Helvetica", "bold");
+          doc.setFontSize(22);
+          doc.text("HIS GRACE NURSERY & PRIMARY SCHOOL", 12, 18);
+          
+          doc.setFont("Helvetica", "normal");
+          doc.setFontSize(10);
+          doc.text("Agbugburu Village, Abeokuta, Ogun State, Nigeria.", 12, 25);
+          doc.text("Motto: Building Lives for Greatness", 12, 30);
+
+          // Student metadata card
+          doc.setFillColor(248, 250, 252);
+          doc.rect(10, 48, 190, 42, 'F');
+          doc.setDrawColor(203, 213, 225);
+          doc.rect(10, 48, 190, 42);
+
+          doc.setTextColor(15, 23, 42);
+          doc.setFontSize(11);
+          doc.setFont("Helvetica", "bold");
+          doc.text("OFFICIAL ACADEMIC STANDING REPORT CARD", 15, 55);
+
+          doc.setFont("Helvetica", "normal");
+          doc.setFontSize(10);
+          doc.text(`Student Name: ${sName}`, 15, 63);
+          doc.text(`Admission Ref: ${sAdmNumber}`, 15, 69);
+          doc.text(`Class Division: ${sClass}`, 15, 75);
+          doc.text(`Registry Ref: ${sId}`, 15, 81);
+
+          doc.text(`Academic Session: 2025/2026`, 115, 63);
+          doc.text(`Academic Period: ${selectedTerm}`, 115, 69);
+          doc.text(`Enrollment Status: ${sStatus}`, 115, 75);
+
+          // Render Grade Table
+          let y = 98;
+          
+          doc.setFillColor(15, 23, 42);
+          doc.rect(10, y, 190, 8, 'F');
+          
+          doc.setTextColor(255, 255, 255);
+          doc.setFont("Helvetica", "bold");
+          doc.setFontSize(10);
+          doc.text("Registered Subjects Course Item", 14, y + 5);
+          doc.text("CA Test [30]", 100, y + 5);
+          doc.text("Exam [70]", 130, y + 5);
+          doc.text("Total [100]", 160, y + 5);
+          doc.text("Grade", 185, y + 5);
+
+          y += 8;
+          doc.setTextColor(15, 23, 42);
+          doc.setFont("Helvetica", "normal");
+
+          let termTotalsSum = 0;
+          let subjectsCount = 0;
+          let hasPromotionInfo = "None";
+          let annualAveragesSum = 0;
+          let annualAveragesCount = 0;
+
+          if (!studentResults || studentResults.length === 0) {
+            doc.text("No official results published in division yet.", 15, y + 10);
+            y += 15;
+          } else {
+            studentResults.forEach(res => {
+              let termScoreObj = null;
+              if (selectedTerm === "First Term") termScoreObj = res.firstTerm;
+              else if (selectedTerm === "Second Term") termScoreObj = res.secondTerm;
+              else if (selectedTerm === "Third Term") termScoreObj = res.thirdTerm;
+
+              if (res.promotionStatus && res.promotionStatus !== "None") {
+                hasPromotionInfo = res.promotionStatus;
+              }
+
+              if (res.annualAverage !== null && res.annualAverage !== undefined && res.annualAverage !== "") {
+                 annualAveragesSum += Number(res.annualAverage);
+                 annualAveragesCount++;
+              }
+
+              doc.setDrawColor(226, 232, 240);
+              doc.line(10, y, 200, y);
+
+              const subName = res.subject || "Course Item";
+              doc.setFont("Helvetica", "bold");
+              doc.text(subName, 14, y + 6);
+              doc.setFont("Helvetica", "normal");
+
+              if (termScoreObj && (termScoreObj.total !== null && termScoreObj.total !== undefined && termScoreObj.total !== "")) {
+                const test = String(termScoreObj.test !== null && termScoreObj.test !== undefined ? termScoreObj.test : "-");
+                const exam = String(termScoreObj.exam !== null && termScoreObj.exam !== undefined ? termScoreObj.exam : "-");
+                const total = String(termScoreObj.total !== null && termScoreObj.total !== undefined ? termScoreObj.total : "-");
+                const grade = termScoreObj.grade || "-";
+
+                termTotalsSum += Number(total);
+                subjectsCount++;
+
+                doc.text(test, 105, y + 6);
+                doc.text(exam, 135, y + 6);
+                doc.setFont("Helvetica", "bold");
+                doc.text(total, 165, y + 6);
+                doc.text(grade, 188, y + 6);
+                doc.setFont("Helvetica", "normal");
+              } else {
+                doc.text("-", 105, y + 6);
+                doc.text("-", 135, y + 6);
+                doc.text("-", 165, y + 6);
+                doc.text("Pending", 188, y + 6);
+              }
+              y += 9;
+            });
+          }
+
+          doc.setDrawColor(15, 23, 42);
+          doc.line(10, y, 200, y);
+          y += 10;
+
+          // Aggregated statistics panel
+          doc.setFont("Helvetica", "bold");
+          if (subjectsCount > 0) {
+            const finalTermAvg = (termTotalsSum / subjectsCount).toFixed(1);
+            doc.text(`Term Class Average: ${finalTermAvg}%`, 15, y);
+            y += 6;
+          }
+
+          if (selectedTerm === "Third Term" && annualAveragesCount > 0) {
+            const finalAnnualAvg = (annualAveragesSum / annualAveragesCount).toFixed(1);
+            doc.text(`Cumulative Annual Average: ${finalAnnualAvg}%`, 15, y);
+            y += 6;
+            if (hasPromotionInfo !== "None") {
+              doc.text(`Promotion Status Outcome: ${hasPromotionInfo.toUpperCase()}`, 15, y);
+              y += 6;
+            }
+          }
+
+          y += 22;
+
+          // Signatures block
+          doc.setFont("Helvetica", "normal");
+          doc.setFontSize(9);
+          
+          doc.line(15, y, 80, y);
+          doc.text("Classroom Level Instructor Signature", 15, y + 4);
+
+          doc.line(125, y, 190, y);
+          doc.text("Principal & Registrar Sign-off Desk", 125, y + 4);
+
+          doc.save(`His_Grace_School_ReportCard_${sAdmNumber}_${selectedTerm.replace(/\s+/g, '_')}.pdf`);
+        };
       }
 
       const remarksVal = profile.coachRemarks || "No custom performance evaluation comments logged yet by the level instructor. Keep studying diligently!";
-      document.getElementById('coachRemarksV2Text').textContent = `"${remarksVal}"`;
+      if (document.getElementById('coachRemarksV2Text')) {
+        document.getElementById('coachRemarksV2Text').textContent = `"${remarksVal}"`;
+      }
 
       // 4. Account Information Tab Values
       document.getElementById('accUsername').textContent = profile.username || 'Unspecified';

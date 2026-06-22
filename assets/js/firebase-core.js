@@ -1550,3 +1550,126 @@ export const getNotices = async () => {
   }
 };
 
+// ==========================================
+// CENTRAL TEACHER PORTAL & RESULTS ENGINE
+// ==========================================
+
+export const getSubjects = async () => {
+  if (!db) {
+    return [
+      "Mathematics", "English Language", "Basic Science", "Social Studies",
+      "Civic Education", "Agricultural Science", "Computer Studies", "CRS",
+      "Verbal Reasoning", "Quantitative Reasoning"
+    ];
+  }
+  try {
+    const docRef = sdkFirestore.doc(db, "hgs_systems_config", "subjects_config");
+    const snap = await sdkFirestore.getDoc(docRef);
+    if (snap.exists() && snap.data().subjects) {
+      return snap.data().subjects;
+    }
+  } catch (err) {
+    console.error("Error fetching subjects from Firestore:", err);
+  }
+  return [
+    "Mathematics", "English Language", "Basic Science", "Social Studies",
+    "Civic Education", "Agricultural Science", "Computer Studies", "CRS",
+    "Verbal Reasoning", "Quantitative Reasoning"
+  ];
+};
+
+export const addSubjectToConfig = async (subjectName) => {
+  if (!db) throw new Error("Firestore not initialized.");
+  try {
+    const docRef = sdkFirestore.doc(db, "hgs_systems_config", "subjects_config");
+    const snap = await sdkFirestore.getDoc(docRef);
+    let subjects = [
+      "Mathematics", "English Language", "Basic Science", "Social Studies",
+      "Civic Education", "Agricultural Science", "Computer Studies", "CRS",
+      "Verbal Reasoning", "Quantitative Reasoning"
+    ];
+    if (snap.exists() && snap.data().subjects) {
+      subjects = snap.data().subjects;
+    }
+    const cleanSub = subjectName.trim();
+    if (!subjects.includes(cleanSub)) {
+      subjects.push(cleanSub);
+      await sdkFirestore.setDoc(docRef, { subjects }, { merge: true });
+    }
+    return { success: true, subjects };
+  } catch (err) {
+    console.error("Error adding subject to configuration:", err);
+    throw err;
+  }
+};
+
+export const getResultsByClassAndSubject = async (studentClass, subject) => {
+  if (!db) throw new Error("Firestore not initialized.");
+  try {
+    const colRef = sdkFirestore.collection(db, "teacher_results");
+    const q1 = sdkFirestore.query(
+      colRef,
+      sdkFirestore.where("class", "==", studentClass),
+      sdkFirestore.where("subject", "==", subject)
+    );
+    const snap = await sdkFirestore.getDocs(q1);
+    const results = {};
+    snap.forEach(doc => {
+      results[doc.data().admissionNumber] = { id: doc.id, ...doc.data() };
+    });
+    return results;
+  } catch (err) {
+    console.error("Error fetching teacher results:", err);
+    throw err;
+  }
+};
+
+export const getResultsByStudent = async (admissionNumber) => {
+  if (!db) throw new Error("Firestore not initialized.");
+  try {
+    const colRef = sdkFirestore.collection(db, "teacher_results");
+    const q = sdkFirestore.query(
+      colRef,
+      sdkFirestore.where("admissionNumber", "==", admissionNumber.toUpperCase().trim())
+    );
+    const snap = await sdkFirestore.getDocs(q);
+    const results = [];
+    snap.forEach(doc => {
+      results.push({ id: doc.id, ...doc.data() });
+    });
+    return results;
+  } catch (err) {
+    console.error("Error fetching student results:", err);
+    throw err;
+  }
+};
+
+export const saveTeacherResult = async (payload) => {
+  if (!db) throw new Error("Firestore not initialized.");
+  try {
+    const colRef = sdkFirestore.collection(db, "teacher_results");
+    const docId = `${payload.admissionNumber.toUpperCase().trim()}_${payload.subject.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()}`;
+    const docRef = sdkFirestore.doc(db, "teacher_results", docId);
+    
+    const docPayload = {
+      studentId: payload.studentId || "",
+      studentName: payload.studentName || "Unspecified",
+      admissionNumber: payload.admissionNumber.toUpperCase().trim(),
+      class: payload.class,
+      subject: payload.subject,
+      firstTerm: payload.firstTerm || null,
+      secondTerm: payload.secondTerm || null,
+      thirdTerm: payload.thirdTerm || null,
+      annualAverage: payload.annualAverage !== undefined ? payload.annualAverage : null,
+      promotionStatus: payload.promotionStatus || null,
+      updatedAt: new Date().toISOString()
+    };
+    
+    await sdkFirestore.setDoc(docRef, docPayload, { merge: true });
+    return { success: true, docId };
+  } catch (err) {
+    console.error("Error saving teacher result:", err);
+    throw err;
+  }
+};
+
