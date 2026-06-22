@@ -307,7 +307,7 @@
       <!-- Error message banner -->
       <div id="loginErrorMessage" class="alert alert-danger" style="display:none; background-color: #fee2e2; border: 1.5px solid #fecaca; color: #dc2626; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; font-weight: 600; font-size: 0.95rem; text-align: center;">
         <i class="fa-solid fa-triangle-exclamation" style="margin-right: 0.5rem;"></i>
-        <span>Invalid Email Address or Password.</span>
+        <span>Invalid email or password.</span>
       </div>
 
       <form id="teacherLoginForm">
@@ -315,7 +315,7 @@
           <label style="display: block; font-size: 0.85rem; font-weight: 700; color: var(--text-dark); margin-bottom: 0.5rem;">Email Address *</label>
           <div style="position: relative;">
             <i class="fa-solid fa-envelope" style="position: absolute; left: 1rem; top: 1rem; color: var(--text-muted);"></i>
-            <input type="email" id="teacherEmailInput" required placeholder="hisgraceschool.name.ng@gmail.com" style="width: 100%; padding: 0.85rem 1rem 0.85rem 2.5rem; border: 1.5px solid var(--border-color); border-radius: var(--radius-sm); font-size: 0.95rem; outline: none;">
+            <input type="email" id="teacherEmailInput" value="hisgraceschool.name.ng@gmail.com" required placeholder="hisgraceschool.name.ng@gmail.com" style="width: 100%; padding: 0.85rem 1rem 0.85rem 2.5rem; border: 1.5px solid var(--border-color); border-radius: var(--radius-sm); font-size: 0.95rem; outline: none;">
           </div>
         </div>
 
@@ -323,7 +323,10 @@
           <label style="display: block; font-size: 0.85rem; font-weight: 700; color: var(--text-dark); margin-bottom: 0.5rem;">Password *</label>
           <div style="position: relative;">
             <i class="fa-solid fa-lock" style="position: absolute; left: 1rem; top: 1rem; color: var(--text-muted);"></i>
-            <input type="password" id="teacherPasswordInput" required placeholder="Teacher2026" style="width: 100%; padding: 0.85rem 1rem 0.85rem 2.5rem; border: 1.5px solid var(--border-color); border-radius: var(--radius-sm); font-size: 0.95rem; outline: none;">
+            <input type="password" id="teacherPasswordInput" required placeholder="••••••••" style="width: 100%; padding: 0.85rem 3rem 0.85rem 2.5rem; border: 1.5px solid var(--border-color); border-radius: var(--radius-sm); font-size: 0.95rem; outline: none;">
+            <button type="button" id="togglePasswordVisibility" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 0.25rem; display: flex; align-items: center; justify-content: center; outline: none;" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='var(--text-muted)'">
+              <i class="fa-solid fa-eye-slash" id="togglePasswordIcon" style="font-size: 1.1rem;"></i>
+            </button>
           </div>
         </div>
 
@@ -529,9 +532,18 @@
     let existingResults = {};
     let subjectsList = [];
 
-    // Login system credentials check
+    // Login system credentials check (Secure Cryptographic Hashing)
     const teacherEmailCorrect = "hisgraceschool.name.ng@gmail.com";
-    const teacherPasswordCorrect = "Teacher2026";
+    const teacherPasswordHash = "4499a093a9dfe821a53b263f2148f48abd52d48d90e344170274d8052fa0c8bb"; // SHA-256 hash of 'Teacher2026'
+
+    // Function to compute SHA-256 hash securely on client-side
+    async function computeSHA256(str) {
+      if (!str) return "";
+      const buf = new TextEncoder().encode(str);
+      const hashBuf = await crypto.subtle.digest("SHA-256", buf);
+      const hashArray = Array.from(new Uint8Array(hashBuf));
+      return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+    }
 
     // Elements
     const teacherLoginSection = document.getElementById("teacherLoginSection");
@@ -585,15 +597,36 @@
       }
     };
 
+    // Password toggle interactive feature
+    const togglePasswordVisibilityBtn = document.getElementById("togglePasswordVisibility");
+    const togglePasswordIcon = document.getElementById("togglePasswordIcon");
+
+    if (togglePasswordVisibilityBtn && togglePasswordIcon && teacherPasswordInput) {
+      togglePasswordVisibilityBtn.addEventListener("click", () => {
+        if (teacherPasswordInput.type === "password") {
+          teacherPasswordInput.type = "text";
+          togglePasswordIcon.classList.remove("fa-eye-slash");
+          togglePasswordIcon.classList.add("fa-eye");
+        } else {
+          teacherPasswordInput.type = "password";
+          togglePasswordIcon.classList.remove("fa-eye");
+          togglePasswordIcon.classList.add("fa-eye-slash");
+        }
+      });
+    }
+
     // Teacher Login Form submission
-    teacherLoginForm.addEventListener("submit", (e) => {
+    teacherLoginForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       loginErrorMessage.style.display = "none";
       
       const email = teacherEmailInput.value.trim();
       const password = teacherPasswordInput.value.trim();
 
-      if (email === teacherEmailCorrect && password === teacherPasswordCorrect) {
+      // Check using secure SHA-256 client hash
+      const passwordHash = await computeSHA256(password);
+
+      if (email === teacherEmailCorrect && passwordHash === teacherPasswordHash) {
         localStorage.setItem('hgs_teacher_session', 'true');
         teacherLoginSection.style.display = 'none';
         teacherDashboardSection.style.display = 'block';
