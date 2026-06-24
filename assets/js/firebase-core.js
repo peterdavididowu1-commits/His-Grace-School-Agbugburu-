@@ -1557,9 +1557,10 @@ export const getNotices = async () => {
 export const getSubjects = async () => {
   if (!db) {
     return [
-      "Mathematics", "English Language", "Basic Science", "Social Studies",
-      "Civic Education", "Agricultural Science", "Computer Studies", "CRS",
-      "Verbal Reasoning", "Quantitative Reasoning"
+      "Mathematics", "English Language", "Verbal Reasoning", "Quantitative Reasoning",
+      "Basic Science", "Social Studies", "Civic Education", "Agricultural Science",
+      "Computer Studies", "Physical and Health Education", "Christian Religious Studies",
+      "Cultural and Creative Arts", "Home Economics", "Yoruba"
     ];
   }
   try {
@@ -1572,9 +1573,10 @@ export const getSubjects = async () => {
     console.error("Error fetching subjects from Firestore:", err);
   }
   return [
-    "Mathematics", "English Language", "Basic Science", "Social Studies",
-    "Civic Education", "Agricultural Science", "Computer Studies", "CRS",
-    "Verbal Reasoning", "Quantitative Reasoning"
+    "Mathematics", "English Language", "Verbal Reasoning", "Quantitative Reasoning",
+    "Basic Science", "Social Studies", "Civic Education", "Agricultural Science",
+    "Computer Studies", "Physical and Health Education", "Christian Religious Studies",
+    "Cultural and Creative Arts", "Home Economics", "Yoruba"
   ];
 };
 
@@ -1584,9 +1586,10 @@ export const addSubjectToConfig = async (subjectName) => {
     const docRef = sdkFirestore.doc(db, "hgs_systems_config", "subjects_config");
     const snap = await sdkFirestore.getDoc(docRef);
     let subjects = [
-      "Mathematics", "English Language", "Basic Science", "Social Studies",
-      "Civic Education", "Agricultural Science", "Computer Studies", "CRS",
-      "Verbal Reasoning", "Quantitative Reasoning"
+      "Mathematics", "English Language", "Verbal Reasoning", "Quantitative Reasoning",
+      "Basic Science", "Social Studies", "Civic Education", "Agricultural Science",
+      "Computer Studies", "Physical and Health Education", "Christian Religious Studies",
+      "Cultural and Creative Arts", "Home Economics", "Yoruba"
     ];
     if (snap.exists() && snap.data().subjects) {
       subjects = snap.data().subjects;
@@ -1599,6 +1602,18 @@ export const addSubjectToConfig = async (subjectName) => {
     return { success: true, subjects };
   } catch (err) {
     console.error("Error adding subject to configuration:", err);
+    throw err;
+  }
+};
+
+export const saveSubjectsList = async (subjects) => {
+  if (!db) throw new Error("Firestore not initialized.");
+  try {
+    const docRef = sdkFirestore.doc(db, "hgs_systems_config", "subjects_config");
+    await sdkFirestore.setDoc(docRef, { subjects }, { merge: true });
+    return { success: true, subjects };
+  } catch (err) {
+    console.error("Error saving subjects list to Firestore:", err);
     throw err;
   }
 };
