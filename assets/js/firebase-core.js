@@ -1792,11 +1792,35 @@ export const getCbtExams = async () => {
           const qQuery = sdkFirestore.query(qColRef, sdkFirestore.where("examId", "==", data.id));
           const qSnap = await sdkFirestore.getDocs(qQuery);
           qSnap.forEach(qDoc => {
-            questions.push(qDoc.data());
+            const qData = qDoc.data();
+            if (!qData.options) {
+              qData.options = {
+                A: qData.optionA || "",
+                B: qData.optionB || "",
+                C: qData.optionC || "",
+                D: qData.optionD || ""
+              };
+            }
+            questions.push(qData);
           });
         } catch (err) {
           console.warn("Could not fetch associated questions:", err);
         }
+      } else {
+        questions = questions.map(qData => {
+          if (!qData.options) {
+            return {
+              ...qData,
+              options: {
+                A: qData.optionA || "",
+                B: qData.optionB || "",
+                C: qData.optionC || "",
+                D: qData.optionD || ""
+              }
+            };
+          }
+          return qData;
+        });
       }
 
       const unifiedExam = {
@@ -1840,11 +1864,35 @@ export const getCbtExamsByClass = async (studentClass) => {
           const qQuery = sdkFirestore.query(qColRef, sdkFirestore.where("examId", "==", data.id));
           const qSnap = await sdkFirestore.getDocs(qQuery);
           qSnap.forEach(qDoc => {
-            questions.push(qDoc.data());
+            const qData = qDoc.data();
+            if (!qData.options) {
+              qData.options = {
+                A: qData.optionA || "",
+                B: qData.optionB || "",
+                C: qData.optionC || "",
+                D: qData.optionD || ""
+              };
+            }
+            questions.push(qData);
           });
         } catch (err) {
           console.warn("Could not fetch associated questions:", err);
         }
+      } else {
+        questions = questions.map(qData => {
+          if (!qData.options) {
+            return {
+              ...qData,
+              options: {
+                A: qData.optionA || "",
+                B: qData.optionB || "",
+                C: qData.optionC || "",
+                D: qData.optionD || ""
+              }
+            };
+          }
+          return qData;
+        });
       }
 
       const unifiedExam = {
@@ -1878,14 +1926,22 @@ export const saveCbtQuestion = async (questionPayload) => {
     }
     const docRef = sdkFirestore.doc(db, "cbt_questions", docId);
     
+    const optionsObj = {
+      A: (questionPayload.options && questionPayload.options.A) || questionPayload.optionA || "",
+      B: (questionPayload.options && questionPayload.options.B) || questionPayload.optionB || "",
+      C: (questionPayload.options && questionPayload.options.C) || questionPayload.optionC || "",
+      D: (questionPayload.options && questionPayload.options.D) || questionPayload.optionD || ""
+    };
+
     const record = {
       id: docId,
       examId: questionPayload.examId,
       questionText: questionPayload.questionText || "",
-      optionA: questionPayload.optionA || "",
-      optionB: questionPayload.optionB || "",
-      optionC: questionPayload.optionC || "",
-      optionD: questionPayload.optionD || "",
+      options: optionsObj,
+      optionA: optionsObj.A,
+      optionB: optionsObj.B,
+      optionC: optionsObj.C,
+      optionD: optionsObj.D,
       correctAnswer: questionPayload.correctAnswer || "A", // A, B, C, D
       updatedAt: new Date().toISOString()
     };
@@ -1960,7 +2016,16 @@ export const getCbtQuestionsForExam = async (examId) => {
     const snap = await sdkFirestore.getDocs(q1);
     const questions = [];
     snap.forEach(doc => {
-      questions.push(doc.data());
+      const qData = doc.data();
+      if (!qData.options) {
+        qData.options = {
+          A: qData.optionA || "",
+          B: qData.optionB || "",
+          C: qData.optionC || "",
+          D: qData.optionD || ""
+        };
+      }
+      questions.push(qData);
     });
     return questions;
   } catch (err) {

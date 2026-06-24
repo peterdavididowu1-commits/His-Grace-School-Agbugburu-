@@ -720,7 +720,17 @@
                      </div>
                    </div>
 
-                   <!-- Quick Navigation Palette -->
+                   <!-- CBT Live Execution Diagnostics (Requirement 5) -->
+                    <div style="background-color: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 6px; padding: 0.75rem 1rem; margin-bottom: 1.5rem; font-size: 0.8rem; color: #334155; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.5rem;">
+                      <span><i class="fa-solid fa-bug" style="color: var(--secondary);"></i> <strong>Live Exam Diagnostics:</strong></span>
+                      <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <span><strong>Exam ID:</strong> <code id="diagLiveExamId" style="background-color: #e2e8f0; padding: 0.1rem 0.3rem; border-radius: 3px; font-family: monospace;">-</code></span>
+                        <span><strong>Linked Questions:</strong> <span id="diagLiveLinkedCount" style="font-weight: bold; color: var(--primary);">-</span></span>
+                        <span><strong>Loaded Questions:</strong> <span id="diagLiveLoadedCount" style="font-weight: bold; color: #16a34a;">-</span></span>
+                      </div>
+                    </div>
+
+                    <!-- Quick Navigation Palette -->
                    <div style="background-color: var(--primary-light); padding: 1rem; border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 2rem;">
                      <span style="font-size: 0.8rem; font-weight: bold; margin-bottom: 0.5rem; display: block; color: var(--primary);">Question Completion Tracker</span>
                      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;" id="questionsPaletteContainer">
@@ -1578,13 +1588,14 @@
 
         const normStudentClass = normalizeClassName(studentClass);
 
-        // Filter CBT exams matching student class category
+        // Filter CBT exams matching student class category and having at least 1 question (Requirement 7)
         const matchClassExams = allPublishedExams.filter(ex => {
           const rawExClass = ex.targetClass || ex.class || '';
           const normExClass = normalizeClassName(rawExClass);
           const classMatches = normExClass === normStudentClass;
           const isPublished = (ex.status === 'Published' || ex.published === true);
-          return classMatches && isPublished;
+          const hasQuestions = ex.questions && ex.questions.length > 0;
+          return classMatches && isPublished && hasQuestions;
         });
 
         // Update CBT Diagnostic & Audit Panel (Requirements 3 & 8)
@@ -1750,7 +1761,7 @@
     }
 
     // Launch CBT play arena
-    function startCbtSession(exam, questions, studentClass, studentName, admissionNumber) {
+    async function startCbtSession(exam, questions, studentClass, studentName, admissionNumber) {
       const studentCbtRosterView = document.getElementById("studentCbtRosterView");
       const studentActiveExamView = document.getElementById("studentActiveExamView");
       const activeExamHeaderTitle = document.getElementById("activeExamHeaderTitle");
@@ -1762,19 +1773,66 @@
       activeExamHeaderTitle.textContent = exam.title;
       activeExamHeaderSubtitle.textContent = `${questions.length} Questions • ${exam.duration} Minutes • Class: ${studentClass}`;
 
+      // Set Live Diagnostics (Requirement 5)
+      const diagLiveExamId = document.getElementById("diagLiveExamId");
+      const diagLiveLinkedCount = document.getElementById("diagLiveLinkedCount");
+      const diagLiveLoadedCount = document.getElementById("diagLiveLoadedCount");
+
+      if (diagLiveExamId) diagLiveExamId.textContent = exam.id || "N/A";
+      if (diagLiveLinkedCount) diagLiveLinkedCount.textContent = (exam.questions ? exam.questions.length : 0);
+      if (diagLiveLoadedCount) diagLiveLoadedCount.textContent = questions.length;
+
       localActiveExamQuestions = questions;
       studentExamStartTime = Date.now();
 
-      // Clear layout and draw MCQ options
       const activeQuestionsPlayList = document.getElementById("activeQuestionsPlayList");
       activeQuestionsPlayList.innerHTML = "";
 
-      // Quick Completion visual palette tracker
       const questionsPaletteContainer = document.getElementById("questionsPaletteContainer");
       questionsPaletteContainer.innerHTML = "";
 
+      // Requirement 6: If zero questions are found
+      if (questions.length === 0) {
+        activeQuestionsPlayList.innerHTML = `
+          <div style="text-align: center; padding: 3rem 1.5rem; color: #dc3545; background-color: #fdf2f2; border: 1.5px solid #f8b4b4; border-radius: 8px; margin-bottom: 2rem;">
+            <i class="fa-solid fa-triangle-exclamation" style="font-size: 3.5rem; margin-bottom: 1rem; color: #dc3545;"></i>
+            <h4 style="font-size: 1.3rem; font-weight: bold; margin-bottom: 0.5rem;">No questions were attached to this examination.</h4>
+            <p style="font-size: 0.9rem; margin-bottom: 1.5rem; color: #7f1d1d;">Please contact your subject teacher or school administrator to configure questions for this assessment.</p>
+            <button type="button" class="btn btn-outline" id="noQuestionsExitBtn" style="padding: 0.5rem 1.5rem;"><i class="fa-solid fa-arrow-left"></i> Return to CBT Center</button>
+          </div>
+        `;
+        
+        const noQuestionsExitBtn = document.getElementById("noQuestionsExitBtn");
+        if (noQuestionsExitBtn) {
+          noQuestionsExitBtn.onclick = () => {
+            initStudentCbtController(studentClass, studentName, admissionNumber);
+          };
+        }
+
+        // Do not start the exam timer!
+        const activeTimerText = document.getElementById("activeTimerText");
+        if (activeTimerText) {
+          activeTimerText.textContent = "Locked";
+          activeTimerText.style.color = "#dc3545";
+        }
+        return;
+      }
+
+      // We have questions, load previously saved answers if any (Requirement 4)
+      let answersMap = {};
+      try {
+        const savedProgress = await getCbtAnswersForStudentAndExam(admissionNumber, exam.id);
+        if (savedProgress && savedProgress.answers) {
+          answersMap = savedProgress.answers;
+        }
+      } catch (err) {
+        console.warn("Could not load previously saved CBT progress:", err);
+      }
+
+      let currentQuestionIndex = 0;
+
+      // Question Tracker reflects actual number of loaded questions (Requirement 8)
       questions.forEach((q, index) => {
-        // Create navigation tracker element node
         const node = document.createElement("button");
         node.type = "button";
         node.id = `palette-node-${q.id}`;
@@ -1787,52 +1845,94 @@
         node.style.fontWeight = "bold";
         node.style.fontSize = "0.85rem";
         node.style.cursor = "pointer";
+        node.style.transition = "all 0.2s";
         node.textContent = index + 1;
         node.addEventListener("click", () => {
-          document.getElementById(`play-card-${q.id}`).scrollIntoView({ behavior: 'smooth', block: 'center' });
+          currentQuestionIndex = index;
+          renderActiveQuestion(currentQuestionIndex);
+          updatePaletteHighlight();
         });
         questionsPaletteContainer.appendChild(node);
+      });
+
+      // Question Rendering Helper
+      function renderActiveQuestion(index) {
+        const q = questions[index];
+        activeQuestionsPlayList.innerHTML = "";
 
         const card = document.createElement("div");
-        card.id = `play-card-${q.id}`;
         card.style.backgroundColor = "#ffffff";
-        card.style.border = "1px solid var(--border-color)";
+        card.style.border = "1.5px solid var(--border-color)";
         card.style.borderRadius = "8px";
         card.style.padding = "1.5rem";
         card.style.marginBottom = "1.5rem";
+        card.style.boxShadow = "var(--shadow-sm)";
+
+        const chosenValue = answersMap[q.id] || "";
 
         card.innerHTML = `
-          <strong style="color: var(--primary); font-size: 0.9rem; margin-bottom: 0.5rem; display:block;">Objective Question ${index + 1} of ${questions.length}</strong>
-          <p style="font-size: 1.1rem; font-weight: 700; color: var(--text-dark); margin-bottom: 1.25rem;">${escapeHTML(q.questionText)}</p>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+            <strong style="color: var(--primary); font-size: 0.95rem;">Objective Question ${index + 1} of ${questions.length}</strong>
+            <span style="background-color: var(--primary-light); color: var(--primary); padding: 0.25rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: bold;">Standard MCQ</span>
+          </div>
+          <p style="font-size: 1.15rem; font-weight: 700; color: var(--text-dark); margin-bottom: 1.5rem; line-height: 1.5;">${escapeHTML(q.questionText)}</p>
           
-          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-            <label class="cbt-choice-option" style="display: flex; align-items: center; gap: 0.75rem; border: 1.5px solid var(--border-color); padding: 0.85rem 1.25rem; border-radius: 6px; cursor: pointer; transition: background-color 0.2s;">
-              <input type="radio" name="opt-${q.id}" value="A" style="transform: scale(1.15);">
+          <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+            <label class="cbt-choice-option" style="display: flex; align-items: center; gap: 0.75rem; border: 1.5px solid var(--border-color); padding: 0.85rem 1.25rem; border-radius: 6px; cursor: pointer; transition: background-color 0.2s; ${chosenValue === 'A' ? 'background-color: var(--primary-light); border-color: var(--primary); font-weight: bold;' : ''}">
+              <input type="radio" name="opt-${q.id}" value="A" ${chosenValue === 'A' ? 'checked' : ''} style="transform: scale(1.15);">
               <span style="font-size: 0.95rem;"><strong>A:</strong> ${escapeHTML(q.options.A)}</span>
             </label>
-            <label class="cbt-choice-option" style="display: flex; align-items: center; gap: 0.75rem; border: 1.5px solid var(--border-color); padding: 0.85rem 1.25rem; border-radius: 6px; cursor: pointer; transition: background-color 0.2s;">
-              <input type="radio" name="opt-${q.id}" value="B" style="transform: scale(1.15);">
+            <label class="cbt-choice-option" style="display: flex; align-items: center; gap: 0.75rem; border: 1.5px solid var(--border-color); padding: 0.85rem 1.25rem; border-radius: 6px; cursor: pointer; transition: background-color 0.2s; ${chosenValue === 'B' ? 'background-color: var(--primary-light); border-color: var(--primary); font-weight: bold;' : ''}">
+              <input type="radio" name="opt-${q.id}" value="B" ${chosenValue === 'B' ? 'checked' : ''} style="transform: scale(1.15);">
               <span style="font-size: 0.95rem;"><strong>B:</strong> ${escapeHTML(q.options.B)}</span>
             </label>
-            <label class="cbt-choice-option" style="display: flex; align-items: center; gap: 0.75rem; border: 1.5px solid var(--border-color); padding: 0.85rem 1.25rem; border-radius: 6px; cursor: pointer; transition: background-color 0.2s;">
-              <input type="radio" name="opt-${q.id}" value="C" style="transform: scale(1.15);">
+            <label class="cbt-choice-option" style="display: flex; align-items: center; gap: 0.75rem; border: 1.5px solid var(--border-color); padding: 0.85rem 1.25rem; border-radius: 6px; cursor: pointer; transition: background-color 0.2s; ${chosenValue === 'C' ? 'background-color: var(--primary-light); border-color: var(--primary); font-weight: bold;' : ''}">
+              <input type="radio" name="opt-${q.id}" value="C" ${chosenValue === 'C' ? 'checked' : ''} style="transform: scale(1.15);">
               <span style="font-size: 0.95rem;"><strong>C:</strong> ${escapeHTML(q.options.C)}</span>
             </label>
-            <label class="cbt-choice-option" style="display: flex; align-items: center; gap: 0.75rem; border: 1.5px solid var(--border-color); padding: 0.85rem 1.25rem; border-radius: 6px; cursor: pointer; transition: background-color 0.2s;">
-              <input type="radio" name="opt-${q.id}" value="D" style="transform: scale(1.15);">
+            <label class="cbt-choice-option" style="display: flex; align-items: center; gap: 0.75rem; border: 1.5px solid var(--border-color); padding: 0.85rem 1.25rem; border-radius: 6px; cursor: pointer; transition: background-color 0.2s; ${chosenValue === 'D' ? 'background-color: var(--primary-light); border-color: var(--primary); font-weight: bold;' : ''}">
+              <input type="radio" name="opt-${q.id}" value="D" ${chosenValue === 'D' ? 'checked' : ''} style="transform: scale(1.15);">
               <span style="font-size: 0.95rem;"><strong>D:</strong> ${escapeHTML(q.options.D)}</span>
             </label>
           </div>
+
+          <!-- Pagination / Navigation Buttons (Requirement 4) -->
+          <div style="display: flex; justify-content: space-between; margin-top: 1.5rem; gap: 1rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+            <button type="button" class="btn btn-outline" id="prevQuestionBtn" ${index === 0 ? 'disabled' : ''} style="flex: 1; justify-content: center; padding: 0.6rem 1rem;"><i class="fa-solid fa-arrow-left"></i> Previous</button>
+            <button type="button" class="btn btn-primary" id="nextQuestionBtn" ${index === questions.length - 1 ? 'disabled' : ''} style="flex: 1; justify-content: center; padding: 0.6rem 1rem;">Next <i class="fa-solid fa-arrow-right"></i></button>
+          </div>
         `;
 
-        // Watch selection change to flag visual completion node
+        // Previous button listener
+        const prevBtn = card.querySelector("#prevQuestionBtn");
+        if (prevBtn) {
+          prevBtn.onclick = () => {
+            if (currentQuestionIndex > 0) {
+              currentQuestionIndex--;
+              renderActiveQuestion(currentQuestionIndex);
+              updatePaletteHighlight();
+            }
+          };
+        }
+
+        // Next button listener
+        const nextBtn = card.querySelector("#nextQuestionBtn");
+        if (nextBtn) {
+          nextBtn.onclick = () => {
+            if (currentQuestionIndex < questions.length - 1) {
+              currentQuestionIndex++;
+              renderActiveQuestion(currentQuestionIndex);
+              updatePaletteHighlight();
+            }
+          };
+        }
+
+        // Watch selection change to save answers in real-time (Requirement 4)
         const rInputList = card.querySelectorAll(`input[name="opt-${q.id}"]`);
         rInputList.forEach(radio => {
-          radio.addEventListener("change", () => {
-            // Highlight matching node in palette
-            node.style.backgroundColor = "var(--primary)";
-            node.style.color = "#ffffff";
-            node.style.borderColor = "var(--primary)";
+          radio.addEventListener("change", async () => {
+            const selectedVal = radio.value;
+            answersMap[q.id] = selectedVal;
 
             // Highlight chosen label visual wrapper
             const familyLabels = card.querySelectorAll(".cbt-choice-option");
@@ -1845,11 +1945,62 @@
             clickedWrapper.style.backgroundColor = "var(--primary-light)";
             clickedWrapper.style.borderColor = "var(--primary)";
             clickedWrapper.style.fontWeight = "bold";
+
+            // Update palette node styling
+            updatePaletteHighlight();
+
+            // Save selected answer in real time to Firebase!
+            try {
+              const answerPayload = {
+                admissionNumber: admissionNumber,
+                examId: exam.id,
+                answers: answersMap,
+                status: "saved"
+              };
+              await saveCbtAnswers(answerPayload);
+              console.log("CBT selected answer saved in real time:", q.id, selectedVal);
+            } catch (err) {
+              console.error("Failed to save selected answer in real-time:", err);
+            }
           });
         });
 
         activeQuestionsPlayList.appendChild(card);
-      });
+      }
+
+      // Palette Highlight Sync Helper
+      function updatePaletteHighlight() {
+        questions.forEach((q, idx) => {
+          const node = document.getElementById(`palette-node-${q.id}`);
+          if (node) {
+            const isCurrent = idx === currentQuestionIndex;
+            const hasAnswer = answersMap[q.id] !== undefined && answersMap[q.id] !== "";
+
+            if (isCurrent) {
+              node.style.border = "2.5px solid var(--secondary)";
+              node.style.boxShadow = "0 0 0 3px rgba(10, 102, 194, 0.2)";
+              node.style.transform = "scale(1.1)";
+            } else {
+              node.style.border = "1.5px solid var(--border-color)";
+              node.style.boxShadow = "none";
+              node.style.transform = "scale(1)";
+            }
+
+            if (hasAnswer) {
+              node.style.backgroundColor = "var(--primary)";
+              node.style.color = "#ffffff";
+              node.style.borderColor = "var(--primary)";
+            } else {
+              node.style.backgroundColor = "#ffffff";
+              node.style.color = "var(--text-dark)";
+            }
+          }
+        });
+      }
+
+      // Display Question 1 automatically (Requirement 4)
+      renderActiveQuestion(0);
+      updatePaletteHighlight();
 
       // Start countdown timer sequence
       let totalSeconds = exam.duration * 60;
@@ -1879,7 +2030,7 @@
         if (totalSeconds <= 0) {
           clearInterval(activeTimerInterval);
           alert("ATTENTION:\nTime has expired! Your academic responses will now be consolidated and submitted automatically.");
-          evaluateAndSubmitCbt(exam, questions, studentClass, studentName, admissionNumber);
+          evaluateAndSubmitCbt(exam, questions, studentClass, studentName, admissionNumber, answersMap);
         }
       }, 1000);
 
@@ -1901,14 +2052,14 @@
           e.preventDefault();
           if (confirm("Are you sure you want to finish and submit your exam now? This is final.")) {
             clearInterval(activeTimerInterval);
-            evaluateAndSubmitCbt(exam, questions, studentClass, studentName, admissionNumber);
+            evaluateAndSubmitCbt(exam, questions, studentClass, studentName, admissionNumber, answersMap);
           }
         };
       }
     }
 
     // Evaluate answers score, compile database result object, and push to Firestore
-    async function evaluateAndSubmitCbt(exam, questions, studentClass, studentName, admissionNumber) {
+    async function evaluateAndSubmitCbt(exam, questions, studentClass, studentName, admissionNumber, answersMap) {
       const studentActiveExamView = document.getElementById("studentActiveExamView");
       const studentCbtResultCard = document.getElementById("studentCbtResultCard");
       const submitCbtExamBtn = document.getElementById("submitCbtExamBtn");
@@ -1924,8 +2075,8 @@
         const answersPayloadList = [];
 
         questions.forEach(q => {
-          const optSelectedInput = document.querySelector(`input[name="opt-${q.id}"]:checked`);
-          const studentSelectionChoice = optSelectedInput ? optSelectedInput.value : "";
+          // Read saved selection directly from answersMap to avoid DOM limitations (Requirement 4)
+          const studentSelectionChoice = answersMap[q.id] || "";
           const isCorrectChoice = studentSelectionChoice === q.correctAnswer;
 
           if (isCorrectChoice) score++;
@@ -1961,6 +2112,18 @@
         };
 
         await saveCbtResult(resultPayload);
+
+        // Update real time status in answers doc
+        try {
+          await saveCbtAnswers({
+            admissionNumber: admissionNumber,
+            examId: exam.id,
+            answers: answersMap,
+            status: "submitted"
+          });
+        } catch (subErr) {
+          console.warn("Could not set final status in answers tracking document:", subErr);
+        }
 
         // Output results on scorecard UI
         document.getElementById("resCardScoreText").textContent = `${score} / ${totalQuestions}`;
