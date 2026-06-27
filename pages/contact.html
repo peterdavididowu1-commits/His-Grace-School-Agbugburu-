@@ -6,11 +6,356 @@
   <title>Contact Us | DIVINE MANDATE BIBLE INSTITUTE (DIMABIN)</title>
   
   <!-- Browser Favicon -->
-  <link rel="icon" type="image/jpeg" href="../assets/images/logo.jpg">
+  <link class="favicon" rel="icon" type="image/jpeg" href="../assets/images/logo.jpg">
   
   <!-- FontAwesome Icons & Stylesheets -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="../assets/css/style.css">
+
+  <style>
+    /* Contact Page Specific Styles */
+    .contact-hero {
+      background: linear-gradient(rgba(15, 32, 66, 0.9), rgba(15, 32, 66, 0.95)), url('../assets/images/hero_banner.jpg') center/cover no-repeat;
+      padding: 8rem 0 6rem 0;
+      text-align: center;
+      color: var(--bg-white);
+    }
+
+    .contact-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+      margin-bottom: 4rem;
+    }
+
+    .contact-card {
+      background-color: var(--bg-white);
+      border-radius: var(--border-radius-lg);
+      padding: 3rem 2rem;
+      text-align: center;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .contact-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background-color: var(--primary);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.35s ease;
+    }
+
+    .contact-card:hover {
+      transform: translateY(-8px);
+      box-shadow: var(--shadow-md);
+      border-color: rgba(212, 175, 55, 0.4);
+    }
+
+    .contact-card:hover::before {
+      transform: scaleX(1);
+    }
+
+    .contact-card.accent-card::before {
+      background-color: var(--accent);
+    }
+
+    .contact-icon {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background-color: var(--bg-slate);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.5rem auto;
+      font-size: 1.8rem;
+      color: var(--primary);
+      transition: var(--transition);
+      border: 1px solid var(--border-color);
+    }
+
+    .contact-card:hover .contact-icon {
+      background-color: var(--primary);
+      color: var(--accent);
+      transform: rotateY(360deg);
+    }
+
+    .contact-card.accent-card:hover .contact-icon {
+      background-color: var(--accent);
+      color: var(--primary-dark);
+    }
+
+    .contact-card h3 {
+      font-size: 1.25rem;
+      color: var(--primary);
+      margin-bottom: 1rem;
+      font-weight: 700;
+      font-family: var(--font-display);
+    }
+
+    .contact-card p, .contact-card a {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+
+    .contact-card a {
+      display: block;
+      transition: var(--transition);
+      font-weight: 600;
+      color: var(--primary-light);
+    }
+
+    .contact-card a:hover {
+      color: var(--accent);
+      transform: translateX(3px);
+    }
+
+    /* Split Grid */
+    .contact-split {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 3rem;
+      align-items: start;
+    }
+
+    @media (max-width: 991px) {
+      .contact-split {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Form Styles */
+    .contact-form-card {
+      background-color: var(--bg-white);
+      border-radius: var(--border-radius-lg);
+      padding: 3.5rem 3rem;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+    }
+
+    @media (max-width: 576px) {
+      .contact-form-card {
+        padding: 2rem 1.5rem;
+      }
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 576px) {
+      .form-row {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .form-group label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 1rem 1.25rem;
+      border-radius: var(--border-radius-md);
+      border: 1px solid var(--border-color);
+      font-family: var(--font-sans);
+      font-size: 0.95rem;
+      color: var(--text-dark);
+      background-color: var(--bg-slate);
+      transition: var(--transition);
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--primary);
+      background-color: var(--bg-white);
+      box-shadow: 0 0 0 3px rgba(15, 32, 66, 0.1);
+    }
+
+    textarea.form-control {
+      resize: vertical;
+      min-height: 150px;
+    }
+
+    /* Sidebar info */
+    .contact-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .hours-card {
+      background-color: var(--bg-white);
+      border-radius: var(--border-radius-lg);
+      padding: 2.5rem;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .hours-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .hours-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px dashed var(--border-color);
+    }
+
+    .hours-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .hours-day {
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .hours-time {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .hours-item.closed .hours-time {
+      color: var(--accent-hover);
+      font-weight: 700;
+    }
+
+    /* Map wrapper */
+    .map-wrapper {
+      position: relative;
+      border-radius: var(--border-radius-lg);
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+      height: 350px;
+    }
+
+    .map-wrapper iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    /* FAQ accordion styles */
+    .faq-wrapper {
+      max-width: 900px;
+      margin: 3rem auto 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .faq-item {
+      background-color: var(--bg-white);
+      border-radius: var(--border-radius-md);
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+      transition: var(--transition);
+    }
+
+    .faq-item.active {
+      border-color: var(--accent);
+      box-shadow: var(--shadow-md);
+    }
+
+    .faq-question {
+      width: 100%;
+      padding: 1.5rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: none;
+      border: none;
+      text-align: left;
+      cursor: pointer;
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--primary);
+      transition: var(--transition);
+    }
+
+    .faq-question:hover {
+      color: var(--accent-hover);
+      background-color: var(--bg-slate);
+    }
+
+    .faq-chevron {
+      font-size: 0.9rem;
+      transition: transform 0.35s ease;
+      color: var(--text-muted);
+    }
+
+    .faq-item.active .faq-chevron {
+      transform: rotate(180deg);
+      color: var(--accent);
+    }
+
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      background-color: var(--bg-slate);
+    }
+
+    .faq-answer-inner {
+      padding: 1.5rem 2rem;
+      border-top: 1px solid var(--border-color);
+      font-size: 0.95rem;
+      color: var(--text-dark);
+      line-height: 1.7;
+    }
+
+    /* Visual confirmation toast styling */
+    .form-alert {
+      padding: 1rem 1.25rem;
+      border-radius: var(--border-radius-md);
+      margin-bottom: 1.5rem;
+      display: none;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 500;
+      font-size: 0.95rem;
+    }
+    .form-alert.success {
+      background-color: #DEF7EC;
+      color: #03543F;
+      border: 1px solid #BCF0DA;
+    }
+  </style>
 </head>
 <body>
 
@@ -66,18 +411,238 @@
     </ul>
   </div>
 
-  <!-- Main Placeholder Content -->
-  <section class="placeholder-section">
-    <div class="container text-center">
-      <div class="placeholder-card">
-        <span class="placeholder-badge">Contact DIMABIN</span>
-        <h2>Reach Out to Our Campus</h2>
-        <p>
-          We are currently preparing full contact systems, interactive google maps coordinates, admission query forms, and email response engines. In future updates, visitors will be able to submit inquiries directly to our administrative team from here.
+  <!-- Hero Section -->
+  <section class="contact-hero">
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-motto">Get In Touch</div>
+        <h2>Contact Us</h2>
+        <div class="hero-subtitle">
+          We would love to hear from you. Reach out to us for admissions, enquiries, counselling, and other information.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact Cards & Info Section -->
+  <section class="py-5" style="background-color: var(--bg-slate);">
+    <div class="container">
+      
+      <!-- Responsive Contact Info Cards -->
+      <div class="contact-grid-3">
+        <!-- Card 1: Phones -->
+        <div class="contact-card accent-card">
+          <div class="contact-icon"><i class="fa-solid fa-phone"></i></div>
+          <h3>Phone Contacts</h3>
+          <p style="margin-bottom: 1rem;">Speak directly with our lines for urgent support or counselling guides.</p>
+          <div style="display: flex; flex-direction: column; gap: 0.5rem; align-items: center;">
+            <a href="tel:08038194611"><i class="fa-solid fa-phone-volume"></i> 0803 819 4611</a>
+            <a href="tel:08138194611"><i class="fa-solid fa-phone-volume"></i> 0813 819 4611</a>
+            <a href="tel:08062186974"><i class="fa-solid fa-phone-volume"></i> 0806 218 6974</a>
+            <a href="tel:08037282082"><i class="fa-solid fa-phone-volume"></i> 0803 728 2082</a>
+          </div>
+        </div>
+
+        <!-- Card 2: Email -->
+        <div class="contact-card">
+          <div class="contact-icon"><i class="fa-solid fa-envelope"></i></div>
+          <h3>Email Address</h3>
+          <p style="margin-bottom: 1.5rem;">Send us your academic correspondence or institutional files anytime.</p>
+          <a href="mailto:olalekan16650@gmail.com" style="word-break: break-all;"><i class="fa-solid fa-paper-plane"></i> olalekan16650@gmail.com</a>
+        </div>
+
+        <!-- Card 3: Address -->
+        <div class="contact-card">
+          <div class="contact-icon"><i class="fa-solid fa-location-dot"></i></div>
+          <h3>Office Address</h3>
+          <p style="margin-bottom: 1.5rem; font-weight: 500; color: var(--primary);">
+            P.O. BOX 3082,<br>
+            Sapon, Abeokuta,<br>
+            Ogun State, Nigeria.
+          </p>
+          <a href="https://maps.google.com/?q=Sapon,Abeokuta,Ogun+State,Nigeria" target="_blank"><i class="fa-solid fa-map-location-dot"></i> View on Google Maps</a>
+        </div>
+      </div>
+
+      <!-- Split Grid: Form & Sidebar -->
+      <div class="contact-split">
+        <!-- Form Column -->
+        <div class="contact-form-card" id="form-container">
+          <span class="section-label" style="margin-bottom: 0.5rem; display: inline-block;">Send a Message</span>
+          <h3 class="font-display" style="color: var(--primary); margin-bottom: 2rem;">Inquiry & Message Portal</h3>
+          
+          <div class="form-alert success" id="contactSuccess">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>Thank you! Your message has been sent successfully. We will get back to you shortly.</span>
+          </div>
+
+          <form id="contactForm" onsubmit="event.preventDefault(); showFormSuccess();">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="fullName">Full Name</label>
+                <input type="text" id="fullName" class="form-control" placeholder="John Doe" required>
+              </div>
+              <div class="form-group">
+                <label for="emailAddr">Email Address</label>
+                <input type="email" id="emailAddr" class="form-control" placeholder="johndoe@example.com" required>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="phoneNum">Phone Number</label>
+                <input type="tel" id="phoneNum" class="form-control" placeholder="0803 123 4567" required>
+              </div>
+              <div class="form-group">
+                <label for="subject">Subject</label>
+                <input type="text" id="subject" class="form-control" placeholder="Admission inquiry / Counsel" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="message">Message</label>
+              <textarea id="message" class="form-control" placeholder="Write your enquiries or messages here..." required></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg" style="width: 100%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.75rem;">
+              <i class="fa-solid fa-paper-plane"></i> Send Message
+            </button>
+          </form>
+        </div>
+
+        <!-- Sidebar (Hours + Map) -->
+        <div class="contact-sidebar">
+          <!-- Office Hours -->
+          <div class="hours-card">
+            <h4 class="font-display" style="color: var(--primary); font-size: 1.25rem; margin-bottom: 1rem; border-left: 3px solid var(--accent); padding-left: 0.75rem;">
+              <i class="fa-regular fa-clock"></i> Office Hours
+            </h4>
+            <p style="font-size: 0.9rem; color: var(--text-muted);">Stop by our physical administrative desks during standard working hours.</p>
+            
+            <ul class="hours-list">
+              <li class="hours-item">
+                <span class="hours-day">Monday – Friday</span>
+                <span class="hours-time">8:00 AM – 5:00 PM</span>
+              </li>
+              <li class="hours-item">
+                <span class="hours-day">Saturday</span>
+                <span class="hours-time">9:00 AM – 2:00 PM</span>
+              </li>
+              <li class="hours-item closed">
+                <span class="hours-day">Sunday</span>
+                <span class="hours-time">Closed</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Prepared Google Map section -->
+          <div class="map-wrapper">
+            <!-- Prepared Google Maps Iframe showing Sapon, Abeokuta, Nigeria -->
+            <iframe 
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15830.407180496185!2d3.333333!3d7.150000!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x103a0b38d3ab964b%3A0xe75855f46a297e6b!2sSapon%2C%20Abeokuta%20110101%2C%20Ogun%20State%2C%20Nigeria!5e0!3m2!1sen!2s!4v1719520000000!5m2!1sen!2s" 
+              allowfullscreen="" 
+              loading="lazy" 
+              referrerpolicy="no-referrer-when-downgrade"
+              title="Divine Mandate Bible Institute Location Sapon Abeokuta">
+            </iframe>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FAQs Accordion Section -->
+  <section class="py-5" style="background-color: var(--bg-white);">
+    <div class="container">
+      <div class="text-center section-title-box">
+        <span class="section-label">General Enquiries</span>
+        <h2 class="section-title">Frequently Asked Questions</h2>
+        <p class="section-subtitle">Find quick answers to common questions about DIMABIN theological standards</p>
+      </div>
+
+      <div class="faq-wrapper">
+        <!-- FAQ 1 -->
+        <div class="faq-item">
+          <button class="faq-question">
+            <span>How do I apply for admission?</span>
+            <span class="faq-chevron"><i class="fa-solid fa-chevron-down"></i></span>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              You can easily apply for admission by heading to our dedicated <strong>Admissions Page</strong>, reviewing the required credentials, and contacting our admissions registry. You will need a pastoral reference letter and WAEC/NECO/GCE or equivalent academic records to complete registration.
+            </div>
+          </div>
+        </div>
+
+        <!-- FAQ 2 -->
+        <div class="faq-item">
+          <button class="faq-question">
+            <span>What programme is currently available?</span>
+            <span class="faq-chevron"><i class="fa-solid fa-chevron-down"></i></span>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              Our flagship program is the <strong>Diploma in Theology (Dip.Th.)</strong>, which offers core courses including Systematic Theology, Biblical Hermeneutics, Homiletics & Sermon Prep, Church History, Evangelism & Missions, and Pastoral Care & Counseling.
+            </div>
+          </div>
+        </div>
+
+        <!-- FAQ 3 -->
+        <div class="faq-item">
+          <button class="faq-question">
+            <span>Can I apply online?</span>
+            <span class="faq-chevron"><i class="fa-solid fa-chevron-down"></i></span>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              Yes, online registration can be initiated through our responsive platform. Our admissions portal is fully optimized to receive, process, and track your application dynamically, keeping you updated via email/notifications.
+            </div>
+          </div>
+        </div>
+
+        <!-- FAQ 4 -->
+        <div class="faq-item">
+          <button class="faq-question">
+            <span>How can I contact the admissions office?</span>
+            <span class="faq-chevron"><i class="fa-solid fa-chevron-down"></i></span>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              You can contact the Admissions office via email at <strong>olalekan16650@gmail.com</strong> or by calling any of our direct telephone lines: <strong>0803 819 4611</strong>, <strong>0813 819 4611</strong>, <strong>0806 218 6974</strong>, or <strong>0803 728 2082</strong>.
+            </div>
+          </div>
+        </div>
+
+        <!-- FAQ 5 -->
+        <div class="faq-item">
+          <button class="faq-question">
+            <span>Where is DIMABIN located?</span>
+            <span class="faq-chevron"><i class="fa-solid fa-chevron-down"></i></span>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              Our official postal coordinate is <strong>P.O. BOX 3082, Sapon, Abeokuta, Ogun State, Nigeria</strong>. We also operate dynamic academic courses centered along our Divine Mandate layouts. Feel free to view our embedded Google map above for navigation guidelines!
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Elegant Contact Call to Action -->
+  <section class="cta-section">
+    <div class="container">
+      <div class="cta-content">
+        <h2 class="cta-title">Connect with Us Today</h2>
+        <div class="cta-subtitle">Our counseling and registry desk is ready to hear your call</div>
+        <p class="cta-description">
+          Whether you need deep spiritual counseling, require program clarifications, or want to begin your comprehensive admission process, reach out now to partner with DIMABIN.
         </p>
-        <div style="display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap;">
-          <a href="../index.html" class="btn btn-primary"><i class="fa-solid fa-house"></i> Return Home</a>
-          <a href="admissions.html" class="btn btn-accent"><i class="fa-solid fa-file-signature"></i> Start Application</a>
+        <div style="display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap; margin-top: 2rem;">
+          <a href="tel:08038194611" class="btn btn-accent btn-lg"><i class="fa-solid fa-phone"></i> Call Now</a>
+          <a href="#form-container" class="btn btn-outline-white btn-lg" style="color: var(--bg-white); border-color: var(--bg-white);"><i class="fa-solid fa-message"></i> Send Message</a>
+          <a href="admissions.html" class="btn btn-accent btn-lg"><i class="fa-solid fa-user-plus"></i> Apply for Admission</a>
         </div>
       </div>
     </div>
@@ -158,5 +723,56 @@
 
   <!-- Scripts -->
   <script src="../assets/js/main.js"></script>
+  
+  <script>
+    // FAQ Accordion Interactivity
+    const faqQuestions = document.querySelectorAll('.faq-question');
+    faqQuestions.forEach(question => {
+      question.addEventListener('click', () => {
+        const item = question.parentElement;
+        const answer = item.querySelector('.faq-answer');
+        
+        // Close other FAQs if open
+        document.querySelectorAll('.faq-item').forEach(otherItem => {
+          if (otherItem !== item && otherItem.classList.contains('active')) {
+            otherItem.classList.remove('active');
+            otherItem.querySelector('.faq-answer').style.maxHeight = '0';
+          }
+        });
+        
+        // Toggle current FAQ
+        item.classList.toggle('active');
+        if (item.classList.contains('active')) {
+          answer.style.maxHeight = answer.scrollHeight + 'px';
+        } else {
+          answer.style.maxHeight = '0';
+        }
+      });
+    });
+
+    // Form submission visual confirmation
+    function showFormSuccess() {
+      const form = document.getElementById('contactForm');
+      const alertBox = document.getElementById('contactSuccess');
+      
+      // Reset & show alert
+      alertBox.style.display = 'flex';
+      form.reset();
+      
+      // Scroll to alert smoothly
+      alertBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      
+      // Fade alert out after 6 seconds
+      setTimeout(() => {
+        alertBox.style.transition = 'opacity 1s ease';
+        alertBox.style.opacity = '0';
+        setTimeout(() => {
+          alertBox.style.display = 'none';
+          alertBox.style.opacity = '1';
+          alertBox.style.transition = 'none';
+        }, 1000);
+      }, 6000);
+    }
+  </script>
 </body>
 </html>
