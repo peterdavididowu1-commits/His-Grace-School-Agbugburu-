@@ -109,16 +109,51 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 // Tab navigation handler
 function setupTabNavigation() {
-  const tabButtons = document.querySelectorAll(".sidebar-nav-btn[data-tab]");
-  tabButtons.forEach(btn => {
-    btn.addEventListener("click", () => {
+  // Delegate clicks on the document to capture any sidebar tab button clicks
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest(".sidebar-nav-btn[data-tab]");
+    if (btn) {
+      e.preventDefault();
       const targetTab = btn.getAttribute("data-tab");
       switchTab(targetTab);
-    });
+    }
+  });
+
+  // Handle initial page load with URL hash if present
+  const initialHash = window.location.hash.substring(1);
+  if (initialHash) {
+    const validTabs = [
+      "overview", "profile", "courses", "students", "results", 
+      "notifications", "security", "cbt-management", "attendance", 
+      "learning-materials", "timetable", "performance-analytics"
+    ];
+    if (validTabs.includes(initialHash)) {
+      switchTab(initialHash);
+    }
+  }
+
+  // Handle hash changes
+  window.addEventListener("hashchange", () => {
+    const hash = window.location.hash.substring(1);
+    if (hash) {
+      const validTabs = [
+        "overview", "profile", "courses", "students", "results", 
+        "notifications", "security", "cbt-management", "attendance", 
+        "learning-materials", "timetable", "performance-analytics"
+      ];
+      if (validTabs.includes(hash)) {
+        switchTab(hash);
+      }
+    }
   });
 }
 
 function switchTab(tabId) {
+  // Update URL hash without causing infinite recursive loop or browser navigation issues
+  if (window.location.hash !== `#${tabId}`) {
+    window.location.hash = tabId;
+  }
+
   // Update sidebar active buttons
   const tabButtons = document.querySelectorAll(".sidebar-nav-btn[data-tab]");
   tabButtons.forEach(btn => {
@@ -140,6 +175,14 @@ function switchTab(tabId) {
       content.style.display = "none";
     }
   });
+
+  // Smooth scroll to top of the dashboard main work area
+  const mainArea = document.querySelector(".dashboard-main");
+  if (mainArea) {
+    mainArea.scrollTo({ top: 0, behavior: "smooth" });
+  } else {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
   // Re-fetch tab specific data if required
   if (tabId === "overview") loadCoreDashboardMetrics();
@@ -582,6 +625,7 @@ if (profileForm) {
 
 // Tab 3: Render Assigned Courses Tab
 async function renderCoursesTab() {
+  if (!currentLecturerDoc) return;
   const sessionFilterVal = document.getElementById("coursesSessionFilter")?.value || timelineSettings.session;
   const assignedCodes = currentLecturerDoc.coursesAssigned || [];
   
@@ -711,6 +755,7 @@ async function renderCoursesTab() {
 
 // Tab 4: Render Registered Students Tab
 async function renderStudentsTab() {
+  if (!currentLecturerDoc) return;
   const sessionVal = document.getElementById("studentsSessionFilter")?.value || timelineSettings.session;
   const courseFilterVal = document.getElementById("studentsCourseFilter")?.value || "all";
   const searchVal = document.getElementById("studentsSearchInput")?.value.trim().toLowerCase() || "";
@@ -878,6 +923,7 @@ let activeCourseGradingList = [];
 let activeExistingResultsMap = {};
 
 async function renderResultUploadTab() {
+  if (!currentLecturerDoc) return;
   const selector = document.getElementById("resultsCourseSelector");
   if (!selector) return;
 
@@ -1180,6 +1226,7 @@ async function handleResultSubmissionFlow(targetStatus) {
 
 // Tab 6: Announcements List and EmailJS student dispatcher
 async function renderAnnouncementsTab() {
+  if (!currentLecturerDoc) return;
   const container = document.getElementById("lecturerAnnouncementsContainer");
   if (!container) return;
 
