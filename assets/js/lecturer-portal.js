@@ -176,6 +176,12 @@ function switchTab(tabId) {
     }
   });
 
+  // Toggle central topbar visibility
+  const portalTopbar = document.getElementById("portalTopbar");
+  if (portalTopbar) {
+    portalTopbar.style.display = (tabId === "overview") ? "none" : "flex";
+  }
+
   // Smooth scroll to top of the dashboard main work area
   const mainArea = document.querySelector(".dashboard-main");
   if (mainArea) {
@@ -396,11 +402,15 @@ async function enterDashboard() {
   // Populate dynamic filters dropdowns
   populateFilterDropdowns();
 
-  // Bind Dashboard Stat Cards to switch tabs
-  document.getElementById("cardAssignedCoursesBtn")?.addEventListener("click", () => switchTab("courses"));
-  document.getElementById("cardRegisteredStudentsBtn")?.addEventListener("click", () => switchTab("students"));
-  document.getElementById("cardUploadedResultsBtn")?.addEventListener("click", () => switchTab("results"));
-  document.getElementById("cardNotificationsBtn")?.addEventListener("click", () => switchTab("notifications"));
+  // Bind Dashboard Cards to switch tabs dynamically
+  document.querySelectorAll(".control-card[data-tab]").forEach(card => {
+    card.addEventListener("click", () => {
+      const targetTab = card.getAttribute("data-tab");
+      if (targetTab) {
+        switchTab(targetTab);
+      }
+    });
+  });
 
   // Initialize general data
   await loadCoreDashboardMetrics();
@@ -1589,6 +1599,39 @@ async function renderCbtManagementTab() {
   await loadQuestionBank();
   await loadExaminations();
 
+  // Empty state handling
+  const mainModuleWrapper = document.getElementById("cbtMainModuleWrapper");
+  const emptyStateContainer = document.getElementById("cbtEmptyStateContainer");
+
+  if (examinationsData.length === 0) {
+    if (mainModuleWrapper) mainModuleWrapper.style.display = "none";
+    if (emptyStateContainer) emptyStateContainer.style.display = "block";
+  } else {
+    if (mainModuleWrapper) mainModuleWrapper.style.display = "block";
+    if (emptyStateContainer) emptyStateContainer.style.display = "none";
+  }
+
+  // Bind Empty State Buttons
+  const btnCbtCreateFirstExam = document.getElementById("btnCbtCreateFirstExam");
+  if (btnCbtCreateFirstExam && !btnCbtCreateFirstExam.dataset.bound) {
+    btnCbtCreateFirstExam.addEventListener("click", () => {
+      if (mainModuleWrapper) mainModuleWrapper.style.display = "block";
+      if (emptyStateContainer) emptyStateContainer.style.display = "none";
+      switchCbtSubtab("create-exam");
+    });
+    btnCbtCreateFirstExam.dataset.bound = "true";
+  }
+
+  const btnGoToQuestionBankFirst = document.getElementById("btnGoToQuestionBankFirst");
+  if (btnGoToQuestionBankFirst && !btnGoToQuestionBankFirst.dataset.bound) {
+    btnGoToQuestionBankFirst.addEventListener("click", () => {
+      if (mainModuleWrapper) mainModuleWrapper.style.display = "block";
+      if (emptyStateContainer) emptyStateContainer.style.display = "none";
+      switchCbtSubtab("question-bank");
+    });
+    btnGoToQuestionBankFirst.dataset.bound = "true";
+  }
+
   // Initial rendering of current sub-tab
   switchCbtSubtab(activeCbtSubtab);
 }
@@ -1665,8 +1708,14 @@ function switchCbtSubtab(subtabId) {
     renderQuestionBankList();
   } else if (subtabId === "scheduled-exams") {
     renderScheduledExamsList();
-  } else if (subtabId === "results-stats") {
+  } else if (subtabId === "published-exams") {
+    renderPublishedExamsList();
+  } else if (subtabId === "submitted-scripts") {
+    populateSubmittedScriptsExamDropdown();
+  } else if (subtabId === "cbt-results") {
     populateResultsExamDropdown();
+  } else if (subtabId === "statistics") {
+    populateStatsExamDropdown();
   }
 }
 
@@ -2217,6 +2266,150 @@ async function deleteExam(id) {
   } catch (err) {
     console.error("Delete exam error:", err);
     window.showToast("Failed to delete exam: " + err.message, "error");
+  }
+}
+
+
+// ==========================================
+// SECTION C-2: PUBLISHED, SUBMITTED SCRIPTS, STATS HELPERS
+// ==========================================
+
+function renderPublishedExamsList() {
+  const tableBody = document.getElementById("publishedExamsTableBody");
+  if (!tableBody) return;
+
+  const publishedExams = examinationsData.filter(ex => ex.status === "Published");
+
+  if (publishedExams.length === 0) {
+    tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2.5rem; color: var(--text-muted);"><i class="fa-solid fa-bullhorn" style="font-size: 2.5rem; opacity: 0.3; display: block; margin-bottom: 0.5rem;"></i> No live published assessments.</td></tr>`;
+    return;
+  }
+
+  tableBody.innerHTML = publishedExams.map(ex => {
+    const formattedStart = formatCbtDate(ex.startDate);
+    const formattedEnd = formatCbtDate(ex.endDate);
+
+    return `
+      <tr style="border-bottom: 1px solid var(--border-color);">
+        <td style="padding: 0.85rem; font-weight: 700; color: var(--primary);">${ex.courseCode}</td>
+        <td style="padding: 0.85rem; font-weight: 600;">${escapeHtml(ex.title)}</td>
+        <td style="padding: 0.85rem; font-size: 0.78rem;">
+          <div><strong>Start:</strong> ${formattedStart}</div>
+          <div><strong>End:</strong> ${formattedEnd}</div>
+        </td>
+        <td style="padding: 0.85rem; text-align: center;">${ex.duration} mins</td>
+        <td style="padding: 0.85rem; text-align: center; font-weight: 600;">${ex.numQuestions} Qs</td>
+        <td style="padding: 0.85rem; text-align: center;">
+          <span class="status-badge cleared" style="display: inline-block; padding: 0.25rem 0.5rem; border-radius: 4px; font-weight:700; font-size: 0.7rem;">Live / Published</span>
+        </td>
+        <td style="padding: 0.85rem; text-align: center;">
+          <button class="btn btn-action-close" data-id="${ex.id}" title="Close Exam" style="background-color: #DC3545; color: white; border: none; padding: 0.4rem 0.75rem; border-radius: 4px; cursor: pointer; font-weight: 700; font-size: 0.75rem;"><i class="fa-solid fa-circle-xmark"></i> Close</button>
+        </td>
+      </tr>
+    `;
+  }).join("");
+
+  tableBody.querySelectorAll(".btn-action-close").forEach(btn => {
+    btn.addEventListener("click", () => updateExamStatus(btn.getAttribute("data-id"), "Closed"));
+  });
+}
+
+function populateSubmittedScriptsExamDropdown() {
+  const select = document.getElementById("submittedScriptsExamSelect");
+  if (!select) return;
+
+  const currentVal = select.value;
+  select.innerHTML = `<option value="">-- Choose Examination --</option>` +
+    examinationsData.map(ex => `<option value="${ex.id}">[${ex.courseCode}] ${escapeHtml(ex.title)}</option>`).join("");
+  
+  select.value = currentVal;
+
+  if (!select.dataset.listenerBound) {
+    select.addEventListener("change", (e) => loadSubmittedScriptsForExam(e.target.value));
+    select.dataset.listenerBound = "true";
+  }
+}
+
+async function loadSubmittedScriptsForExam(examId) {
+  const tableBody = document.getElementById("submittedScriptsTableBody");
+  if (!tableBody) return;
+
+  if (!examId) {
+    tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">Please select an examination from the dropdown above.</td></tr>`;
+    return;
+  }
+
+  tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">Fetching submitted scripts...</td></tr>`;
+
+  try {
+    const rSnap = await getDocs(query(collection(db, "cbtResults"), where("examId", "==", examId)));
+    const results = rSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    if (results.length === 0) {
+      tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2.5rem; color: var(--text-muted);"><i class="fa-solid fa-file-excel" style="font-size: 2rem; opacity: 0.3; display: block; margin-bottom: 0.5rem;"></i> No students have submitted answers for this examination yet.</td></tr>`;
+      return;
+    }
+
+    tableBody.innerHTML = results.map(res => `
+      <tr style="border-bottom: 1px solid var(--border-color);">
+        <td style="padding: 0.75rem;">${res.studentId}</td>
+        <td style="padding: 0.75rem; font-weight: 600;">${escapeHtml(res.studentName)}</td>
+        <td style="padding: 0.75rem;">${res.studentMatric}</td>
+        <td style="padding: 0.75rem; text-align: center; font-weight: 700; color: var(--primary);">${res.score} / ${res.totalQuestions}</td>
+        <td style="padding: 0.75rem; text-align: center; font-weight: 700;">${res.grade}</td>
+        <td style="padding: 0.75rem; text-align: center; font-size: 0.75rem; color: var(--text-muted);">${formatCbtDate(res.submittedAt)}</td>
+        <td style="padding: 0.75rem; text-align: center;">
+          <button class="btn btn-review-script" data-studentid="${res.studentId}" data-examid="${res.examId}" data-studentname="${escapeHtml(res.studentName)}" style="background-color: var(--accent); color: var(--primary); border: none; padding: 0.35rem 0.6rem; border-radius: 4px; font-weight: 700; font-size: 0.75rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem;"><i class="fa-solid fa-file-invoice"></i> Review Script</button>
+        </td>
+      </tr>
+    `).join("");
+
+    tableBody.querySelectorAll(".btn-review-script").forEach(btn => {
+      btn.addEventListener("click", () => {
+        reviewStudentScript(btn.getAttribute("data-studentid"), btn.getAttribute("data-examid"), btn.getAttribute("data-studentname"));
+      });
+    });
+
+  } catch (err) {
+    console.error("Load submitted scripts error:", err);
+    tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2rem; color: var(--danger-color);">Error fetching submitted scripts: ${err.message}</td></tr>`;
+  }
+}
+
+function populateStatsExamDropdown() {
+  const select = document.getElementById("statsExamSelect");
+  if (!select) return;
+
+  const currentVal = select.value;
+  select.innerHTML = `<option value="">-- Choose Examination --</option>` +
+    examinationsData.map(ex => `<option value="${ex.id}">[${ex.courseCode}] ${escapeHtml(ex.title)}</option>`).join("");
+  
+  select.value = currentVal;
+
+  if (!select.dataset.listenerBound) {
+    select.addEventListener("change", (e) => loadStatsForExam(e.target.value));
+    select.dataset.listenerBound = "true";
+  }
+}
+
+async function loadStatsForExam(examId) {
+  if (!examId) {
+    resetCbtStatsCounters();
+    return;
+  }
+
+  try {
+    const rSnap = await getDocs(query(collection(db, "cbtResults"), where("examId", "==", examId)));
+    activeResultsList = rSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    if (activeResultsList.length === 0) {
+      resetCbtStatsCounters();
+      return;
+    }
+
+    calculateAndRenderCbtStats();
+  } catch (err) {
+    console.error("Load stats error:", err);
   }
 }
 
