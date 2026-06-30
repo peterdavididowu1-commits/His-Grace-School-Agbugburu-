@@ -939,28 +939,63 @@ if (passwordChangeForm) {
   });
 }
 
-// Auto-Login Session Recovery Check on Load
-window.addEventListener("DOMContentLoaded", async () => {
-  let savedSession = sessionStorage.getItem(SESSION_KEY) || localStorage.getItem(SESSION_KEY);
-  if (savedSession) {
+// Master Auth State Observer for Student Portal
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    console.log("👤 [Student Portal] Firebase Auth detected signed-in user:", user.email);
+    // If currentStudentDoc is already loaded (e.g., from manual login), skip re-fetching
+    if (currentStudentDoc && currentStudentDoc.email === user.email) {
+      return;
+    }
+
     try {
-      const parsed = JSON.parse(savedSession);
-      // Fetch fresh document from Firestore to ensure integrity and updated profile values
-      const ref = doc(db, "students", parsed.matricNumber.replace(/\//g, "-"));
-      const docSnap = await getDoc(ref);
-      
-      if (docSnap.exists()) {
-        const studentDoc = { id: docSnap.id, ...docSnap.data() };
-        
-        // Wait briefly for Firebase Auth state to sync up
-        onAuthStateChanged(auth, (user) => {
-          enterDashboard(studentDoc);
-        });
+      // 1. Fetch student profile from Firestore using their unique email
+      const q = query(collection(db, "students"), where("email", "==", user.email));
+      const snap = await getDocs(q);
+
+      let studentDoc = null;
+      if (!snap.empty) {
+        studentDoc = { id: snap.docs[0].id, ...snap.docs[0].data() };
       } else {
+        // Fallback: search by saved matric number if available
+        let savedSession = sessionStorage.getItem(SESSION_KEY) || localStorage.getItem(SESSION_KEY);
+        if (savedSession) {
+          const parsed = JSON.parse(savedSession);
+          if (parsed.matricNumber) {
+            const qFallback = query(collection(db, "students"), where("matricNumber", "==", parsed.matricNumber));
+            const snapFallback = await getDocs(qFallback);
+            if (!snapFallback.empty) {
+              studentDoc = { id: snapFallback.docs[0].id, ...snapFallback.docs[0].data() };
+            }
+          }
+        }
+      }
+
+      if (studentDoc) {
+        currentStudentDoc = studentDoc;
+        const sessionData = {
+          matricNumber: studentDoc.matricNumber,
+          studentId: studentDoc.studentId,
+          fullName: studentDoc.fullName,
+          email: studentDoc.email
+        };
+        // Always save to both to survive redirects/restarts
+        localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
+        sessionStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
+        
+        enterDashboard(studentDoc);
+      } else {
+        console.warn("⚠️ Student profile not found in database for email:", user.email);
         handleLogout(null);
       }
     } catch (err) {
-      console.warn("⚠️ Failed to recover saved portal session:", err);
+      console.error("❌ Error recovering student session on auth state change:", err);
+      handleLogout(null);
+    }
+  } else {
+    console.log("👤 [Student Portal] No active Firebase Auth session.");
+    // Only logout if they had an active view or cached session
+    if (currentStudentDoc || sessionStorage.getItem(SESSION_KEY) || localStorage.getItem(SESSION_KEY)) {
       handleLogout(null);
     }
   }

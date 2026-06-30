@@ -9,7 +9,8 @@ const {
   sendPasswordResetEmail,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  signOut
+  signOut,
+  onAuthStateChanged
 } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js");
 
 const SESSION_KEY = "dimabin_admin_session";
@@ -122,11 +123,56 @@ function resetInactivityTimer() {
 }
 
 function checkActiveSession() {
-  const cached = sessionStorage.getItem(SESSION_KEY) || localStorage.getItem(SESSION_KEY);
-  if (cached) {
-    const session = JSON.parse(cached);
-    enterDashboard(session);
-  }
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      console.log("👤 [Admin Portal] Firebase Auth detected signed-in user:", user.email);
+      
+      try {
+        // Query matching admin document in Firestore by email
+        const q = query(collection(db, "admins"), where("email", "==", user.email));
+        const snap = await getDocs(q);
+        
+        let adminDoc = null;
+        if (!snap.empty) {
+          adminDoc = { id: snap.docs[0].id, data: snap.docs[0].data() };
+        } else {
+          // Fallback to checking cached session if any
+          const cached = sessionStorage.getItem(SESSION_KEY) || localStorage.getItem(SESSION_KEY);
+          if (cached) {
+            const sessionData = JSON.parse(cached);
+            if (sessionData.adminId) {
+              const adminRecord = await findAdminRecord(sessionData.adminId);
+              if (adminRecord) {
+                adminDoc = adminRecord;
+              }
+            }
+          }
+        }
+        
+        if (adminDoc) {
+          const session = {
+            adminId: adminDoc.data.adminId,
+            fullName: adminDoc.data.fullName,
+            role: adminDoc.data.role
+          };
+          localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+          sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+          enterDashboard(session);
+        } else {
+          console.warn("⚠️ Admin profile not found in database for email:", user.email);
+          handleLogout(null);
+        }
+      } catch (err) {
+        console.error("❌ Error recovering admin session:", err);
+        handleLogout(null);
+      }
+    } else {
+      console.log("👤 [Admin Portal] No active Firebase Auth session.");
+      if (sessionStorage.getItem(SESSION_KEY) || localStorage.getItem(SESSION_KEY)) {
+        handleLogout(null);
+      }
+    }
+  });
 }
 
 function enterDashboard(session) {
@@ -147,6 +193,7 @@ function enterDashboard(session) {
 }
 
 function handleLogout(message = "Logged out successfully.") {
+  signOut(auth).catch((err) => console.error("Admin signOut failed:", err));
   sessionStorage.removeItem(SESSION_KEY);
   localStorage.removeItem(SESSION_KEY);
   clearTimeout(inactivityTimer);

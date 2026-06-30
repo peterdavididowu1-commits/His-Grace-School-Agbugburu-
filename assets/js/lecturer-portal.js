@@ -204,33 +204,68 @@ function switchTab(tabId) {
   if (tabId === "performance-analytics") renderPerformanceAnalyticsTab();
 }
 
-// Session Validator
+// Session Validator via Firebase Auth Master State
 async function checkActiveSession() {
-  const sessionDataStr = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
-  if (sessionDataStr) {
-    try {
-      const sessionData = JSON.parse(sessionDataStr);
-      // Fetch fresh record from Firestore
-      const q = query(collection(db, "lecturers"), where("lecturerId", "==", sessionData.lecturerId));
-      const snap = await getDocs(q);
-      
-      if (!snap.empty) {
-        currentLecturerDoc = { id: snap.docs[0].id, ...snap.docs[0].data() };
-        enterDashboard();
-      } else {
-        handleLogout("Session invalid. Lecturer record not found.");
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      console.log("👤 [Lecturer Portal] Firebase Auth detected signed-in user:", user.email);
+      if (currentLecturerDoc && currentLecturerDoc.email === user.email) {
+        return;
       }
-    } catch (e) {
-      console.error("Session parse failed:", e);
-      handleLogout();
+      
+      try {
+        const q = query(collection(db, "lecturers"), where("email", "==", user.email));
+        const snap = await getDocs(q);
+        
+        let lecturerDoc = null;
+        if (!snap.empty) {
+          lecturerDoc = { id: snap.docs[0].id, ...snap.docs[0].data() };
+        } else {
+          // Fallback to checking cached session if any
+          const sessionDataStr = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
+          if (sessionDataStr) {
+            const sessionData = JSON.parse(sessionDataStr);
+            if (sessionData.lecturerId) {
+              const qFallback = query(collection(db, "lecturers"), where("lecturerId", "==", sessionData.lecturerId));
+              const snapFallback = await getDocs(qFallback);
+              if (!snapFallback.empty) {
+                lecturerDoc = { id: snapFallback.docs[0].id, ...snapFallback.docs[0].data() };
+              }
+            }
+          }
+        }
+        
+        if (lecturerDoc) {
+          currentLecturerDoc = lecturerDoc;
+          const sessionData = {
+            lecturerId: lecturerDoc.lecturerId,
+            fullName: lecturerDoc.fullName,
+            email: lecturerDoc.email
+          };
+          localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
+          sessionStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
+          enterDashboard();
+        } else {
+          console.warn("⚠️ Lecturer profile not found in database for email:", user.email);
+          await window.handleLogout(null);
+        }
+      } catch (err) {
+        console.error("❌ Error recovering lecturer session:", err);
+        await window.handleLogout(null);
+      }
+    } else {
+      console.log("👤 [Lecturer Portal] No active Firebase Auth session.");
+      if (currentLecturerDoc || localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY)) {
+        await window.handleLogout(null);
+      } else {
+        // Show clean login panel
+        document.getElementById("anonymousView").style.display = "block";
+        document.getElementById("authenticatedView").style.display = "none";
+        const feedback = document.getElementById("loginFeedback");
+        if (feedback) feedback.style.display = "none";
+      }
     }
-  } else {
-    // Show clean login panel
-    document.getElementById("anonymousView").style.display = "block";
-    document.getElementById("authenticatedView").style.display = "none";
-    const feedback = document.getElementById("loginFeedback");
-    if (feedback) feedback.style.display = "none";
-  }
+  });
 }
 
 // Handle Login Submission
