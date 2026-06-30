@@ -20,6 +20,7 @@ let allApplications = [];
 let allStudents = [];
 let allLecturers = [];
 let allCourses = [];
+let currentAdminDoc = null;
 
 // Global toggle password visibility
 window.togglePasswordVisibility = () => {
@@ -150,6 +151,7 @@ function checkActiveSession() {
         }
         
         if (adminDoc) {
+          currentAdminDoc = adminDoc.data;
           const session = {
             adminId: adminDoc.data.adminId,
             fullName: adminDoc.data.fullName,
@@ -177,6 +179,13 @@ function checkActiveSession() {
 
 function enterDashboard(session) {
   sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  if (!currentAdminDoc) {
+    currentAdminDoc = {
+      adminId: session.adminId,
+      fullName: session.fullName,
+      role: session.role
+    };
+  }
   document.getElementById("anonymousView").style.display = "none";
   document.getElementById("authenticatedView").style.display = "block";
   document.getElementById("currentUserDisplay").textContent = session.fullName;
@@ -196,6 +205,7 @@ function handleLogout(message = "Logged out successfully.") {
   signOut(auth).catch((err) => console.error("Admin signOut failed:", err));
   sessionStorage.removeItem(SESSION_KEY);
   localStorage.removeItem(SESSION_KEY);
+  currentAdminDoc = null;
   clearTimeout(inactivityTimer);
   document.getElementById("anonymousView").style.display = "block";
   document.getElementById("authenticatedView").style.display = "none";
@@ -291,6 +301,8 @@ if (loginForm) {
         fullName: adminData.fullName,
         role: adminData.role
       };
+
+      currentAdminDoc = adminData;
 
       if (rememberMe) {
         localStorage.setItem(SESSION_KEY, JSON.stringify(session));
@@ -3150,6 +3162,27 @@ async function handleWorkflowAction(actionName) {
     return;
   }
 
+  // Part 1: Defensive verification of admin identity
+  let adminProfile = currentAdminDoc;
+  if (!adminProfile) {
+    const cached = sessionStorage.getItem(SESSION_KEY) || localStorage.getItem(SESSION_KEY);
+    if (cached) {
+      try {
+        adminProfile = JSON.parse(cached);
+      } catch (e) {
+        console.error("Failed to parse cached session:", e);
+      }
+    }
+  }
+
+  if (!adminProfile || !adminProfile.fullName) {
+    window.showToast("Administrator profile could not be loaded.", "error");
+    return;
+  }
+
+  const approverName = adminProfile.fullName;
+  const adminIdVal = adminProfile.adminId || "Unknown Admin";
+
   const courseCode = selectedReviewSheet.courseCode;
   const session = selectedReviewSheet.academicSession;
   const semester = selectedReviewSheet.semester;
@@ -3159,9 +3192,12 @@ async function handleWorkflowAction(actionName) {
   if (!confirmAction) return;
 
   try {
-    const approverName = currentAdminDoc ? (currentAdminDoc.fullName || "Administrator") : "Administrator";
-    
-    // 1. Commit Decision Logs
+    const now = new Date();
+    const dateStr = now.toLocaleDateString();
+    const timeStr = now.toLocaleTimeString();
+    const timestamp = now.toISOString();
+
+    // 1. Commit Decision Logs to approvalHistory
     const histRef = doc(db, "approvalHistory", docId);
     const histSnap = await getDoc(histRef);
     let histList = [];
@@ -3171,14 +3207,17 @@ async function handleWorkflowAction(actionName) {
     histList.push({
       action: actionName,
       approver: approverName,
+      approverId: adminIdVal,
       comments: comments,
-      timestamp: new Date().toISOString()
+      date: dateStr,
+      time: timeStr,
+      timestamp: timestamp
     });
     await setDoc(histRef, { courseCode, academicSession: session, semester, history: histList });
 
     // 2. Perform workflow updates
     if (actionName === "Returned" || actionName === "Rejected") {
-      const payload = { ...selectedReviewSheet, status: actionName, adminComment: comments, lastUpdated: new Date().toISOString() };
+      const payload = { ...selectedReviewSheet, status: actionName, adminComment: comments, lastUpdated: timestamp };
       delete payload.id;
       delete payload.source;
 
@@ -3188,11 +3227,29 @@ async function handleWorkflowAction(actionName) {
       window.showToast("Results sheet successfully returned to Lecturer.", "success");
 
     } else if (actionName === "Approved") {
-      await updateDoc(doc(db, "results", docId), { status: "Approved", adminComment: comments, lastUpdated: new Date().toISOString() });
+      await updateDoc(doc(db, "results", docId), {
+        status: "Approved",
+        adminComment: comments,
+        approvedById: adminIdVal,
+        approvedByName: approverName,
+        approvedDate: dateStr,
+        approvedTime: timeStr,
+        approvedTimestamp: timestamp,
+        lastUpdated: timestamp
+      });
       window.showToast("Results sheet approved successfully.", "success");
 
     } else if (actionName === "Published") {
-      await updateDoc(doc(db, "results", docId), { status: "Published", adminComment: comments, lastUpdated: new Date().toISOString() });
+      await updateDoc(doc(db, "results", docId), {
+        status: "Published",
+        adminComment: comments,
+        publishedBy: adminIdVal,
+        publishedByName: approverName,
+        publishedDate: dateStr,
+        publishedTime: timeStr,
+        publishedTimestamp: timestamp,
+        lastUpdated: timestamp
+      });
 
       // Fetch credits for each student record
       const coursesSnap = await getDocs(collection(db, "courses"));
@@ -3215,11 +3272,11 @@ async function handleWorkflowAction(actionName) {
           courseCode: courseCode,
           courseTitle: document.getElementById("reviewMetaTitle").textContent || "Theology Course",
           creditUnit: creditUnit,
-          attendance: std.attendance,
-          assignment: std.assignment,
-          test: std.test,
-          practical: std.practical || 0,
-          examScore: std.examScore,
+          attendance: std.attendance !== undefined ? std.attendance : 0,
+          assignment: std.assignment !== undefined ? std.assignment : 0,
+          test: std.test !== undefined ? std.test : 0,
+          practical: std.practical !== undefined ? std.practical : 0,
+          examScore: std.examScore !== undefined ? std.examScore : 0,
           total: std.total,
           grade: std.grade,
           gp: std.gp,
@@ -3227,7 +3284,11 @@ async function handleWorkflowAction(actionName) {
           semester: semester,
           academicSession: session,
           status: "Published",
-          publishedAt: new Date().toISOString()
+          publishedBy: approverName,
+          publishedDate: dateStr,
+          publishedTime: timeStr,
+          publishedAt: timestamp,
+          publishedTimestamp: timestamp
         };
         await setDoc(doc(db, "publishedResults", pubDocId), studentPayload);
       });

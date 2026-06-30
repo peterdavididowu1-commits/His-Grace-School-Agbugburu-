@@ -807,6 +807,11 @@ function renderFilteredStudentResults() {
         <td style="text-align: center; font-weight: 700;">${credits}</td>
         <td style="text-align: center;">${r.semester}</td>
         <td style="text-align: center;"><code>${r.academicSession}</code></td>
+        <td style="text-align: center;">${r.attendance !== undefined ? r.attendance : 0}</td>
+        <td style="text-align: center;">${r.assignment !== undefined ? r.assignment : 0}</td>
+        <td style="text-align: center;">${r.test !== undefined ? r.test : 0}</td>
+        <td style="text-align: center;">${r.practical !== undefined ? r.practical : 0}</td>
+        <td style="text-align: center;">${r.examScore !== undefined ? r.examScore : 0}</td>
         <td style="text-align: center; font-weight: 700; color: var(--primary);">${r.total}</td>
         <td style="text-align: center;">
           <span class="status-badge ${r.grade === 'F' ? '' : 'cleared'}" style="padding: 0.2rem 0.6rem; font-weight: 800; font-size: 0.82rem;">${r.grade}</span>
@@ -828,9 +833,15 @@ function renderFilteredStudentResults() {
           <td style="padding: 0.65rem; text-align: center; font-weight: 700;">${credits}</td>
           <td style="padding: 0.65rem; text-align: center;">${r.semester}</td>
           <td style="padding: 0.65rem; text-align: center;"><code>${r.academicSession}</code></td>
+          <td style="padding: 0.65rem; text-align: center;">${r.attendance !== undefined ? r.attendance : 0}</td>
+          <td style="padding: 0.65rem; text-align: center;">${r.assignment !== undefined ? r.assignment : 0}</td>
+          <td style="padding: 0.65rem; text-align: center;">${r.test !== undefined ? r.test : 0}</td>
+          <td style="padding: 0.65rem; text-align: center;">${r.practical !== undefined ? r.practical : 0}</td>
+          <td style="padding: 0.65rem; text-align: center;">${r.examScore !== undefined ? r.examScore : 0}</td>
           <td style="padding: 0.65rem; text-align: center; font-weight: 700; color: var(--primary);">${r.total}</td>
           <td style="padding: 0.65rem; text-align: center; font-weight: 800;">${r.grade}</td>
           <td style="padding: 0.65rem; text-align: center; font-weight: 700; color: var(--accent);">${gp}</td>
+          <td style="padding: 0.65rem; text-align: center; font-weight: 700;">${remarkText}</td>
         </tr>
       `;
       tPrintBody.insertAdjacentHTML("beforeend", printRow);

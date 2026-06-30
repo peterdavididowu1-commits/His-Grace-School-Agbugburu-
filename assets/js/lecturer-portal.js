@@ -985,6 +985,7 @@ if (courseFilter) {
 // Tab 5: Score Matrix & Result Upload Workspace
 let activeCourseGradingList = [];
 let activeExistingResultsMap = {};
+let activeCourseStatus = "Pending Upload";
 
 async function renderResultUploadTab() {
   if (!currentLecturerDoc) return;
@@ -1114,12 +1115,36 @@ async function renderResultUploadTab() {
       // Update course metadata display card
       const metaCard = document.getElementById("courseDetailsInfoCard");
       if (metaCard) {
+        let approvalDetailsHtml = "";
+        if (statusText === "Approved") {
+          const approverName = resultsData?.approvedByName || "Administrator";
+          const approvedDate = resultsData?.approvedDate || "";
+          const approvedTime = resultsData?.approvedTime || "";
+          approvalDetailsHtml = `
+            <div style="grid-column: 1 / -1; margin-top: 0.5rem; padding: 0.5rem; background-color: rgba(46, 125, 50, 0.1); border-left: 4px solid var(--success); border-radius: 4px; font-size: 0.88rem;">
+              <strong><i class="fa-solid fa-circle-check"></i> APPROVED BY:</strong> ${approverName} 
+              <span style="margin-left: 1rem;"><strong><i class="fa-solid fa-calendar"></i> DATE:</strong> ${approvedDate} ${approvedTime}</span>
+            </div>
+          `;
+        } else if (statusText === "Published") {
+          const publisherName = resultsData?.publishedByName || "Lecturer";
+          const publishedDate = resultsData?.publishedDate || "";
+          const publishedTime = resultsData?.publishedTime || "";
+          approvalDetailsHtml = `
+            <div style="grid-column: 1 / -1; margin-top: 0.5rem; padding: 0.5rem; background-color: rgba(21, 101, 192, 0.1); border-left: 4px solid var(--primary); border-radius: 4px; font-size: 0.88rem;">
+              <strong><i class="fa-solid fa-globe"></i> PUBLISHED BY:</strong> ${publisherName} 
+              <span style="margin-left: 1rem;"><strong><i class="fa-solid fa-calendar"></i> DATE:</strong> ${publishedDate} ${publishedTime}</span>
+            </div>
+          `;
+        }
+
         metaCard.innerHTML = `
           <div><strong><i class="fa-solid fa-code"></i> Course Code:</strong> <span style="color: var(--primary); font-weight: 700;">${code}</span></div>
           <div><strong><i class="fa-solid fa-book-bible"></i> Course Title:</strong> <span style="color: var(--primary); font-weight: 700;">${courseTitle}</span></div>
           <div><strong><i class="fa-solid fa-calendar-day"></i> Semester:</strong> <span style="color: var(--primary); font-weight: 700;">${timelineSettings.semester}</span></div>
           <div><strong><i class="fa-solid fa-clock"></i> Session:</strong> <span style="color: var(--primary); font-weight: 700;">${timelineSettings.session}</span></div>
           <div><strong><i class="fa-solid fa-user-group"></i> Registered Students:</strong> <span style="color: var(--accent); font-weight: 800;">${activeCourseGradingList.length}</span></div>
+          ${approvalDetailsHtml}
         `;
       }
 
@@ -1133,11 +1158,30 @@ async function renderResultUploadTab() {
         }
       }
 
-      // Disable/Enable top buttons based on lock state
+      // Disable/Enable top buttons based on lock state and status
       const btnSave = document.getElementById("btnSaveDraftResults");
       const btnPub = document.getElementById("btnPublishResults");
-      if (btnSave) btnSave.style.display = isLocked ? "none" : "inline-flex";
-      if (btnPub) btnPub.style.display = isLocked ? "none" : "inline-flex";
+      
+      activeCourseStatus = statusText;
+
+      if (statusText === "Approved") {
+        if (btnSave) btnSave.style.display = "none";
+        if (btnPub) {
+          btnPub.style.display = "inline-flex";
+          btnPub.style.backgroundColor = "var(--success)";
+          btnPub.innerHTML = `<i class="fa-solid fa-globe"></i> Publish Results`;
+        }
+      } else if (statusText === "Submitted" || statusText === "Published") {
+        if (btnSave) btnSave.style.display = "none";
+        if (btnPub) btnPub.style.display = "none";
+      } else {
+        if (btnSave) btnSave.style.display = "inline-flex";
+        if (btnPub) {
+          btnPub.style.display = "inline-flex";
+          btnPub.style.backgroundColor = "var(--primary)";
+          btnPub.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Submit Results`;
+        }
+      }
 
       if (activeCourseGradingList.length === 0) {
         tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; color: var(--text-muted); padding: 3rem 0;">No enrolled student found registered in ${code} for this session.</td></tr>`;
@@ -1306,7 +1350,13 @@ if (btnSaveDraft) {
   btnSaveDraft.addEventListener("click", () => handleResultSubmissionFlow("Draft"));
 }
 if (btnPublish) {
-  btnPublish.addEventListener("click", () => handleResultSubmissionFlow("Submitted"));
+  btnPublish.addEventListener("click", () => {
+    if (activeCourseStatus === "Approved") {
+      handleResultPublishFlow();
+    } else {
+      handleResultSubmissionFlow("Submitted");
+    }
+  });
 }
 
 // Bind CBT Exam Score Import triggered logic
@@ -1479,6 +1529,135 @@ async function handleResultSubmissionFlow(targetStatus) {
   } finally {
     if (btnSaveDraft) btnSaveDraft.disabled = false;
     if (btnPublish) btnPublish.disabled = false;
+  }
+}
+
+async function handleResultPublishFlow() {
+  const courseCode = document.getElementById("resultsCourseSelector").value;
+  if (!courseCode) {
+    window.showToast("Select a course to publish results.", "warning");
+    return;
+  }
+
+  const confirmPublish = confirm("Are you sure you want to PUBLISH these approved results? Once published, they will become official and visible to all registered students in their portals.");
+  if (!confirmPublish) return;
+
+  const btnPub = document.getElementById("btnPublishResults");
+  if (btnPub) btnPub.disabled = true;
+
+  window.showToast("Publishing results to student portals...", "info");
+
+  try {
+    const docId = `${courseCode}_${timelineSettings.session.replace(/\//g, "-")}_${timelineSettings.semester}`;
+    const resultsRef = doc(db, "results", docId);
+    const resultsSnap = await getDoc(resultsRef);
+
+    if (!resultsSnap.exists()) {
+      window.showToast("Approved results sheet not found.", "error");
+      if (btnPub) btnPub.disabled = false;
+      return;
+    }
+
+    const resultsData = resultsSnap.data();
+    if (resultsData.status !== "Approved") {
+      window.showToast("Only approved results can be published.", "warning");
+      if (btnPub) btnPub.disabled = false;
+      return;
+    }
+
+    const now = new Date();
+    const dateStr = now.toLocaleDateString();
+    const timeStr = now.toLocaleTimeString();
+    const timestamp = now.toISOString();
+
+    const lecturerName = currentLecturerDoc ? (currentLecturerDoc.fullName || "Lecturer") : "Lecturer";
+    const lecturerId = currentLecturerDoc ? (currentLecturerDoc.lecturerId || "Unknown Lecturer") : "Unknown Lecturer";
+
+    // Update workflow status of main results doc to Published
+    await updateDoc(resultsRef, {
+      status: "Published",
+      publishedBy: lecturerId,
+      publishedByName: lecturerName,
+      publishedDate: dateStr,
+      publishedTime: timeStr,
+      publishedTimestamp: timestamp,
+      lastUpdated: timestamp
+    });
+
+    // Determine course details for the student records
+    const matchedCourse = officialCoursesList.find(c => c.courseCode === courseCode);
+    const courseTitle = matchedCourse ? (matchedCourse.courseTitle || matchedCourse.title || "Theology Course") : "Theology Course";
+    const creditUnit = matchedCourse ? parseInt(matchedCourse.creditUnit || matchedCourse.credits || 3) : 3;
+
+    // Copy to publishedResults collection
+    const studentsList = resultsData.students || [];
+    const batchPromises = studentsList.map(async std => {
+      const pubDocId = `pub_${std.studentId}_${courseCode}_${timelineSettings.session.replace(/\//g, "-")}_${timelineSettings.semester}`;
+      
+      const total = std.total || 0;
+      let grade = std.grade || "F";
+      let gp = std.gp !== undefined ? std.gp : 0;
+      let remark = std.remark || "FAIL";
+
+      const studentPayload = {
+        studentId: std.studentId,
+        fullName: std.fullName,
+        matricNumber: std.matricNumber,
+        courseCode: courseCode,
+        courseTitle: courseTitle,
+        creditUnit: creditUnit,
+        attendance: std.attendance !== undefined ? std.attendance : 0,
+        assignment: std.assignment !== undefined ? std.assignment : 0,
+        test: std.test !== undefined ? std.test : 0,
+        practical: std.practical !== undefined ? std.practical : 0,
+        examScore: std.examScore !== undefined ? std.examScore : 0,
+        total: total,
+        grade: grade,
+        gp: gp,
+        remark: remark,
+        semester: timelineSettings.semester,
+        academicSession: timelineSettings.session,
+        status: "Published",
+        publishedBy: lecturerName,
+        publishedDate: dateStr,
+        publishedTime: timeStr,
+        publishedAt: timestamp,
+        publishedTimestamp: timestamp
+      };
+
+      await setDoc(doc(db, "publishedResults", pubDocId), studentPayload);
+    });
+
+    await Promise.all(batchPromises);
+
+    // Save history entry
+    const histRef = doc(db, "approvalHistory", docId);
+    const histSnap = await getDoc(histRef);
+    let histList = [];
+    if (histSnap.exists()) {
+      histList = histSnap.data().history || [];
+    }
+    histList.push({
+      action: "Published",
+      approver: lecturerName,
+      approverId: lecturerId,
+      comments: "Results officially published to Student Portals.",
+      date: dateStr,
+      time: timeStr,
+      timestamp: timestamp
+    });
+    await setDoc(histRef, { courseCode, academicSession: timelineSettings.session, semester: timelineSettings.semester, history: histList });
+
+    window.showToast("Results published successfully.", "success");
+
+    // Force refresh the interface
+    document.getElementById("resultsCourseSelector").dispatchEvent(new Event("change"));
+
+  } catch (err) {
+    console.error("Result publication failed:", err);
+    window.showToast("Publication Error: " + err.message, "error");
+  } finally {
+    if (btnPub) btnPub.disabled = false;
   }
 }
 
