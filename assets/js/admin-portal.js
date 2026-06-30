@@ -360,6 +360,8 @@ document.querySelectorAll(".sidebar-nav-btn").forEach(btn => {
 
     if (targetTab === "cbt-control") {
       initAdminCbtControl();
+    } else if (targetTab === "result-approval") {
+      initResultApprovalConsole();
     }
   });
 });
@@ -2796,3 +2798,450 @@ document.getElementById("btnAdminExportCbtResults")?.addEventListener("click", (
   link.click();
   document.body.removeChild(link);
 });
+
+// ==========================================
+// RESULT APPROVAL SYSTEM & CBT INTEGRATION
+// ==========================================
+let approvalSubmissionsList = [];
+let selectedReviewSheet = null;
+
+async function initResultApprovalConsole() {
+  const tbody = document.getElementById("resultSubmissionsTableBody");
+  if (!tbody) return;
+
+  tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2.5rem; color: var(--text-muted);"><i class="fa-solid fa-spinner fa-spin" style="margin-right: 0.5rem;"></i> Loading grading worksheets...</td></tr>`;
+
+  try {
+    // 1. Get CBT Import toggled setting from settings/timeline_settings
+    const timelineSnap = await getDoc(doc(db, "settings", "timeline_settings"));
+    const timelineData = timelineSnap.exists() ? timelineSnap.data() : {};
+    const cbtEnabled = timelineData.cbtImportEnabled === true;
+
+    const cbtSwitch = document.getElementById("adminCbtImportSwitch");
+    const cbtStatus = document.getElementById("adminCbtSwitchStatus");
+    const cbtSlider = document.getElementById("adminCbtImportSlider");
+
+    if (cbtSwitch && cbtStatus && cbtSlider) {
+      cbtSwitch.checked = cbtEnabled;
+      cbtStatus.textContent = cbtEnabled ? "Enabled" : "Disabled";
+      cbtStatus.style.color = cbtEnabled ? "var(--success)" : "var(--text-muted)";
+      cbtSlider.style.backgroundColor = cbtEnabled ? "var(--primary)" : "#ccc";
+
+      cbtSwitch.onchange = async () => {
+        const active = cbtSwitch.checked;
+        cbtStatus.textContent = active ? "Enabled" : "Disabled";
+        cbtStatus.style.color = active ? "var(--success)" : "var(--text-muted)";
+        cbtSlider.style.backgroundColor = active ? "var(--primary)" : "#ccc";
+        
+        try {
+          await setDoc(doc(db, "settings", "timeline_settings"), { cbtImportEnabled: active }, { merge: true });
+          window.showToast(`CBT import capabilities successfully ${active ? 'enabled' : 'disabled'} system-wide.`, "success");
+        } catch (e) {
+          window.showToast("Failed to commit settings: " + e.message, "error");
+        }
+      };
+    }
+
+    // 2. Fetch submissions from both results (active/submitted) and resultDrafts (returned drafts)
+    const resSnap = await getDocs(collection(db, "results"));
+    const draftSnap = await getDocs(collection(db, "resultDrafts"));
+
+    approvalSubmissionsList = [];
+
+    resSnap.forEach(d => {
+      approvalSubmissionsList.push({ id: d.id, source: "results", ...d.data() });
+    });
+
+    draftSnap.forEach(d => {
+      const data = d.data();
+      if (data.status === "Returned" || data.status === "Rejected" || data.status === "Draft") {
+        approvalSubmissionsList.push({ id: d.id, source: "resultDrafts", ...data });
+      }
+    });
+
+    // Fetch courses for title mapping
+    const coursesSnap = await getDocs(collection(db, "courses"));
+    const courseTitlesMap = {};
+    coursesSnap.forEach(cs => {
+      const cData = cs.data();
+      courseTitlesMap[cData.courseCode] = cData.courseTitle || cData.title;
+    });
+
+    // Sort by latest updated
+    approvalSubmissionsList.sort((a, b) => new Date(b.lastUpdated || 0) - new Date(a.lastUpdated || 0));
+
+    // Render approval directory
+    renderApprovalList(courseTitlesMap);
+
+    // Bind filters
+    const fSession = document.getElementById("approvalFilterSession");
+    const fSemester = document.getElementById("approvalFilterSemester");
+    const fCourse = document.getElementById("approvalFilterCourse");
+    const fLecturer = document.getElementById("approvalFilterLecturer");
+
+    const filterHandler = () => {
+      renderApprovalList(courseTitlesMap);
+    };
+
+    if (fSession) fSession.onchange = filterHandler;
+    if (fSemester) fSemester.onchange = filterHandler;
+    if (fCourse) fCourse.oninput = filterHandler;
+    if (fLecturer) fLecturer.oninput = filterHandler;
+
+    // Bind close review modal trigger
+    const btnCloseRevModal = document.getElementById("btnCloseReviewModal");
+    if (btnCloseRevModal) {
+      btnCloseRevModal.onclick = () => {
+        document.getElementById("adminReviewResultModal").style.display = "none";
+      };
+    }
+
+  } catch (err) {
+    console.error("Result Approval Console failed:", err);
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: red; padding: 2.5rem;">Console Error: ${err.message}</td></tr>`;
+  }
+}
+
+function renderApprovalList(courseTitlesMap) {
+  const tbody = document.getElementById("resultSubmissionsTableBody");
+  if (!tbody) return;
+
+  const fSession = document.getElementById("approvalFilterSession")?.value || "all";
+  const fSemester = document.getElementById("approvalFilterSemester")?.value || "all";
+  const fCourse = document.getElementById("approvalFilterCourse")?.value.toLowerCase().trim() || "";
+  const fLecturer = document.getElementById("approvalFilterLecturer")?.value.toLowerCase().trim() || "";
+
+  const filtered = approvalSubmissionsList.filter(item => {
+    if (fSession !== "all" && item.academicSession !== fSession) return false;
+    if (fSemester !== "all" && item.semester !== fSemester) return false;
+    if (fCourse !== "" && !item.courseCode.toLowerCase().includes(fCourse)) return false;
+    if (fLecturer !== "" && !item.lecturerName.toLowerCase().includes(fLecturer)) return false;
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">No grading sheet submissions match your active filter criteria.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = "";
+  filtered.forEach((item, index) => {
+    const title = courseTitlesMap[item.courseCode] || "General Theology Course";
+    const stdCount = item.students ? item.students.length : 0;
+    const formattedDate = item.lastUpdated ? new Date(item.lastUpdated).toLocaleString() : "-";
+    
+    let badgeClass = "status-badge info";
+    if (item.status === "Published") badgeClass = "status-badge cleared";
+    else if (item.status === "Approved") badgeClass = "status-badge cleared";
+    else if (item.status === "Submitted") badgeClass = "status-badge pending";
+    else if (item.status === "Returned" || item.status === "Rejected") badgeClass = "status-badge danger";
+    else if (item.status === "Draft") badgeClass = "status-badge pending";
+
+    const tr = document.createElement("tr");
+    tr.style.borderBottom = "1px solid var(--border-color)";
+    tr.innerHTML = `
+      <td style="padding: 1rem;">
+        <strong>${item.courseCode}</strong><br>
+        <span style="font-size: 0.8rem; color: var(--text-muted);">${title}</span>
+      </td>
+      <td style="padding: 1rem;">
+        <code>${item.academicSession}</code><br>
+        <span style="font-size: 0.8rem; color: var(--primary); font-weight: 500;">${item.semester}</span>
+      </td>
+      <td style="padding: 1rem; font-weight: 600; color: var(--primary);">${item.lecturerName || 'Assigned Facilitator'}</td>
+      <td style="padding: 1rem; text-align: center; font-weight: 700; color: var(--accent);">${stdCount}</td>
+      <td style="padding: 1rem; text-align: center;">
+        <span class="${badgeClass}" style="padding: 0.25rem 0.6rem; font-size: 0.8rem; font-weight: 700;">${item.status || 'Draft'}</span>
+      </td>
+      <td style="padding: 1rem; text-align: center; font-size: 0.8rem; color: var(--text-muted);">${formattedDate}</td>
+      <td style="padding: 1rem; text-align: center;">
+        <button class="btn btn-review-sheet" style="background-color: var(--primary); color: white; border: none; padding: 0.45rem 1rem; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 0.82rem;" data-index="${index}">
+          <i class="fa-solid fa-file-magnifying-glass"></i> Review
+        </button>
+      </td>
+    `;
+
+    tbody.appendChild(tr);
+
+    tr.querySelector(".btn-review-sheet").onclick = () => {
+      openReviewModal(item, title);
+    };
+  });
+}
+
+async function openReviewModal(item, courseTitle) {
+  selectedReviewSheet = item;
+  const modal = document.getElementById("adminReviewResultModal");
+  if (!modal) return;
+
+  // Set metadata fields
+  document.getElementById("reviewMetaCode").textContent = item.courseCode;
+  document.getElementById("reviewMetaTitle").textContent = courseTitle;
+  document.getElementById("reviewMetaLecturer").textContent = item.lecturerName || "Facilitator";
+  document.getElementById("reviewMetaSession").textContent = item.academicSession;
+  document.getElementById("reviewMetaSemester").textContent = item.semester;
+
+  const statusMeta = document.getElementById("reviewMetaStatus");
+  statusMeta.textContent = item.status || "Submitted";
+  if (item.status === "Published") {
+    statusMeta.className = "status-badge cleared";
+  } else if (item.status === "Approved") {
+    statusMeta.className = "status-badge cleared";
+  } else if (item.status === "Submitted") {
+    statusMeta.className = "status-badge pending";
+  } else if (item.status === "Returned" || item.status === "Rejected") {
+    statusMeta.className = "status-badge danger";
+  } else {
+    statusMeta.className = "status-badge pending";
+  }
+
+  // Comments value
+  const commentsArea = document.getElementById("adminReviewComments");
+  commentsArea.value = item.adminComment || "";
+
+  // Render Students Grid
+  const reviewBody = document.getElementById("adminReviewTableBody");
+  reviewBody.innerHTML = "";
+
+  const students = item.students || [];
+  if (students.length === 0) {
+    reviewBody.innerHTML = `<tr><td colspan="11" style="text-align: center; padding: 2rem; color: var(--text-muted);">No student grades recorded on this sheet.</td></tr>`;
+  } else {
+    students.forEach(std => {
+      const tr = document.createElement("tr");
+      tr.style.borderBottom = "1px solid var(--border-color)";
+      tr.innerHTML = `
+        <td style="padding: 0.5rem 0.75rem;"><strong>${std.fullName}</strong></td>
+        <td style="padding: 0.5rem 0.75rem;"><code>${std.matricNumber}</code></td>
+        <td style="padding: 0.5rem 0.75rem; text-align: center;">${std.attendance !== undefined ? std.attendance : "-"}</td>
+        <td style="padding: 0.5rem 0.75rem; text-align: center;">${std.assignment !== undefined ? std.assignment : "-"}</td>
+        <td style="padding: 0.5rem 0.75rem; text-align: center;">${std.test !== undefined ? std.test : "-"}</td>
+        <td style="padding: 0.5rem 0.75rem; text-align: center;">${std.practical !== undefined ? std.practical : "-"}</td>
+        <td style="padding: 0.5rem 0.75rem; text-align: center;">${std.examScore !== undefined ? std.examScore : "-"}</td>
+        <td style="padding: 0.5rem 0.75rem; text-align: center; font-weight: 700; color: var(--primary);">${std.total !== undefined ? std.total : "-"}</td>
+        <td style="padding: 0.5rem 0.75rem; text-align: center;">
+          <span class="status-badge ${std.grade === 'F' ? '' : 'cleared'}" style="padding: 0.1rem 0.4rem; font-size: 0.75rem; font-weight: 800;">${std.grade || '-'}</span>
+        </td>
+        <td style="padding: 0.5rem 0.75rem; text-align: center; font-weight: 700; color: var(--accent);">${std.gp !== undefined ? std.gp : "-"}</td>
+        <td style="padding: 0.5rem 0.75rem; text-align: center;">
+          <span class="status-badge ${std.remark === 'PASS' ? 'cleared' : ''}" style="padding: 0.1rem 0.4rem; font-size: 0.75rem; font-weight: 700;">${std.remark || '-'}</span>
+        </td>
+      `;
+      reviewBody.appendChild(tr);
+    });
+  }
+
+  // Decision Timeline history load
+  const historySec = document.getElementById("reviewApprovalHistorySection");
+  const historyLogs = document.getElementById("reviewApprovalHistoryLogs");
+  
+  if (historySec && historyLogs) {
+    const docId = `${item.courseCode}_${item.academicSession.replace(/\//g, "-")}_${item.semester}`;
+    const histRef = doc(db, "approvalHistory", docId);
+    try {
+      const histSnap = await getDoc(histRef);
+      if (histSnap.exists() && histSnap.data().history && histSnap.data().history.length > 0) {
+        historySec.style.display = "block";
+        historyLogs.innerHTML = "";
+        
+        histSnap.data().history.forEach(log => {
+          const formattedTime = log.timestamp ? new Date(log.timestamp).toLocaleString() : "-";
+          const logItem = document.createElement("div");
+          logItem.style.borderBottom = "1px dashed var(--border-color)";
+          logItem.style.paddingBottom = "0.35rem";
+          logItem.style.marginBottom = "0.35rem";
+          logItem.innerHTML = `
+            <div style="display: flex; justify-content: space-between; font-weight: 700; color: var(--primary); font-size: 0.8rem;">
+              <span><i class="fa-solid fa-gavel"></i> ${log.action} by ${log.approver}</span>
+              <span style="color: var(--text-muted); font-weight: 400; font-size: 0.75rem;">${formattedTime}</span>
+            </div>
+            ${log.comments ? `<div style="margin-top: 0.2rem; font-style: italic; color: #555; font-size: 0.78rem;">Remarks: "${log.comments}"</div>` : ''}
+          `;
+          historyLogs.appendChild(logItem);
+        });
+      } else {
+        historySec.style.display = "none";
+      }
+    } catch (e) {
+      console.warn("Decision logs fetch omitted:", e);
+      historySec.style.display = "none";
+    }
+  }
+
+  // Render context control buttons
+  const actionsRow = document.getElementById("adminReviewActionsRow");
+  actionsRow.innerHTML = "";
+
+  const btnClose = document.createElement("button");
+  btnClose.type = "button";
+  btnClose.className = "btn";
+  btnClose.style.backgroundColor = "#ccc";
+  btnClose.style.color = "var(--text-dark)";
+  btnClose.style.border = "none";
+  btnClose.style.padding = "0.6rem 1.2rem";
+  btnClose.style.borderRadius = "4px";
+  btnClose.style.fontWeight = "600";
+  btnClose.style.cursor = "pointer";
+  btnClose.innerHTML = "Close Review";
+  btnClose.onclick = () => { modal.style.display = "none"; };
+
+  if (item.status === "Submitted") {
+    const btnApprove = createActionButton("Approve Results", "var(--success)", "fa-thumbs-up", () => handleWorkflowAction("Approved"));
+    const btnReturn = createActionButton("Return with Comments", "var(--accent)", "fa-reply", () => handleWorkflowAction("Returned"));
+    const btnReject = createActionButton("Reject Results", "var(--danger)", "fa-ban", () => handleWorkflowAction("Rejected"));
+
+    actionsRow.appendChild(btnReject);
+    actionsRow.appendChild(btnReturn);
+    actionsRow.appendChild(btnApprove);
+  } else if (item.status === "Approved") {
+    const btnPublish = createActionButton("Publish Official Results", "var(--success)", "fa-globe", () => handleWorkflowAction("Published"));
+    const btnReturn = createActionButton("Return with Comments", "var(--accent)", "fa-reply", () => handleWorkflowAction("Returned"));
+
+    actionsRow.appendChild(btnReturn);
+    actionsRow.appendChild(btnPublish);
+  } else if (item.status === "Published") {
+    const infoText = document.createElement("span");
+    infoText.style.marginRight = "auto";
+    infoText.style.color = "var(--success)";
+    infoText.style.fontWeight = "700";
+    infoText.style.fontSize = "0.9rem";
+    infoText.innerHTML = `<i class="fa-solid fa-circle-check"></i> Published Official Sheet (Visible to all Student Portals)`;
+    actionsRow.appendChild(infoText);
+  } else if (item.status === "Returned" || item.status === "Rejected") {
+    const infoText = document.createElement("span");
+    infoText.style.marginRight = "auto";
+    infoText.style.color = "var(--danger)";
+    infoText.style.fontWeight = "700";
+    infoText.style.fontSize = "0.9rem";
+    infoText.innerHTML = `<i class="fa-solid fa-reply"></i> Sent back to Facilitator for modifications.`;
+    actionsRow.appendChild(infoText);
+  }
+
+  actionsRow.appendChild(btnClose);
+  modal.style.display = "flex";
+}
+
+function createActionButton(label, bgColor, icon, callback) {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "btn";
+  btn.style.backgroundColor = bgColor;
+  btn.style.color = bgColor === "var(--accent)" ? "var(--primary-dark)" : "white";
+  btn.style.border = "none";
+  btn.style.padding = "0.6rem 1.2rem";
+  btn.style.borderRadius = "4px";
+  btn.style.fontWeight = "700";
+  btn.style.cursor = "pointer";
+  btn.style.display = "inline-flex";
+  btn.style.alignItems = "center";
+  btn.style.gap = "0.5rem";
+  btn.style.fontSize = "0.85rem";
+  btn.innerHTML = `<i class="fa-solid ${icon}"></i> ${label}`;
+  btn.onclick = callback;
+  return btn;
+}
+
+async function handleWorkflowAction(actionName) {
+  if (!selectedReviewSheet) return;
+  const comments = document.getElementById("adminReviewComments").value.trim();
+
+  if ((actionName === "Returned" || actionName === "Rejected") && !comments) {
+    window.showToast("Remarks are MANDATORY for returns/rejections to provide lecturer feedback.", "warning");
+    return;
+  }
+
+  const courseCode = selectedReviewSheet.courseCode;
+  const session = selectedReviewSheet.academicSession;
+  const semester = selectedReviewSheet.semester;
+  const docId = `${courseCode}_${session.replace(/\//g, "-")}_${semester}`;
+
+  const confirmAction = confirm(`Are you sure you want to trigger "${actionName}" on this grading sheet?`);
+  if (!confirmAction) return;
+
+  try {
+    const approverName = currentAdminDoc ? (currentAdminDoc.fullName || "Administrator") : "Administrator";
+    
+    // 1. Commit Decision Logs
+    const histRef = doc(db, "approvalHistory", docId);
+    const histSnap = await getDoc(histRef);
+    let histList = [];
+    if (histSnap.exists()) {
+      histList = histSnap.data().history || [];
+    }
+    histList.push({
+      action: actionName,
+      approver: approverName,
+      comments: comments,
+      timestamp: new Date().toISOString()
+    });
+    await setDoc(histRef, { courseCode, academicSession: session, semester, history: histList });
+
+    // 2. Perform workflow updates
+    if (actionName === "Returned" || actionName === "Rejected") {
+      const payload = { ...selectedReviewSheet, status: actionName, adminComment: comments, lastUpdated: new Date().toISOString() };
+      delete payload.id;
+      delete payload.source;
+
+      await setDoc(doc(db, "resultDrafts", docId), payload);
+      await deleteDoc(doc(db, "results", docId));
+
+      window.showToast("Results sheet successfully returned to Lecturer.", "success");
+
+    } else if (actionName === "Approved") {
+      await updateDoc(doc(db, "results", docId), { status: "Approved", adminComment: comments, lastUpdated: new Date().toISOString() });
+      window.showToast("Results sheet approved successfully.", "success");
+
+    } else if (actionName === "Published") {
+      await updateDoc(doc(db, "results", docId), { status: "Published", adminComment: comments, lastUpdated: new Date().toISOString() });
+
+      // Fetch credits for each student record
+      const coursesSnap = await getDocs(collection(db, "courses"));
+      let creditUnit = 3;
+      coursesSnap.forEach(cs => {
+        const cData = cs.data();
+        if (cData.courseCode === courseCode) {
+          creditUnit = parseInt(cData.creditUnit || cData.credits || 3);
+        }
+      });
+
+      // Write student-level results to publishedResults
+      const studentsList = selectedReviewSheet.students || [];
+      const batchPromises = studentsList.map(async std => {
+        const pubDocId = `pub_${std.studentId}_${courseCode}_${session.replace(/\//g, "-")}_${semester}`;
+        const studentPayload = {
+          studentId: std.studentId,
+          fullName: std.fullName,
+          matricNumber: std.matricNumber,
+          courseCode: courseCode,
+          courseTitle: document.getElementById("reviewMetaTitle").textContent || "Theology Course",
+          creditUnit: creditUnit,
+          attendance: std.attendance,
+          assignment: std.assignment,
+          test: std.test,
+          practical: std.practical || 0,
+          examScore: std.examScore,
+          total: std.total,
+          grade: std.grade,
+          gp: std.gp,
+          remark: std.remark,
+          semester: semester,
+          academicSession: session,
+          status: "Published",
+          publishedAt: new Date().toISOString()
+        };
+        await setDoc(doc(db, "publishedResults", pubDocId), studentPayload);
+      });
+
+      await Promise.all(batchPromises);
+      window.showToast("Results published successfully! Student visibilities committed.", "success");
+    }
+
+    // Close and refresh
+    document.getElementById("adminReviewResultModal").style.display = "none";
+    initResultApprovalConsole();
+
+  } catch (err) {
+    console.error("Workflow action execution failed:", err);
+    window.showToast("Workflow Error: " + err.message, "error");
+  }
+}

@@ -1527,59 +1527,145 @@
 
         <!-- Tab 4: Results Display -->
         <div class="tab-content" id="tab-results">
-          <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+          <div class="no-print" style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
             <div>
-              <h2 class="font-display" style="color: var(--primary); font-size: 2rem; margin-bottom: 0.5rem;">Academic Results</h2>
+              <h2 class="font-display" style="color: var(--primary); font-size: 2rem; margin-bottom: 0.5rem; font-weight: 800;">Academic Results</h2>
               <p style="color: var(--text-muted); margin-bottom: 0;">Official cumulative performance report cards uploaded by theological facilitators.</p>
             </div>
-            <button type="button" class="btn no-print" id="btnPrintTranscript" style="background-color: var(--primary); color: white; padding: 0.75rem 1.5rem; font-weight: 600; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-print"></i> Print Transcript</button>
+            <button type="button" class="btn no-print" id="btnPrintTranscript" style="background-color: var(--primary); color: white; padding: 0.75rem 1.5rem; font-weight: 700; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; border-radius: var(--border-radius-md);"><i class="fa-solid fa-print"></i> Print Academic Transcript</button>
           </div>
 
-          <!-- Cumulative Statistics Summary -->
-          <div class="stats-grid" style="margin-bottom: 2rem;" id="resultsSummaryRow">
-            <div class="stat-card" style="cursor: default;">
-              <div class="stat-card-info">
-                <h5>GPA Average</h5>
-                <div class="stat-value" id="resultsGPA">0.00</div>
+          <!-- Filter Controls -->
+          <div class="search-filter-bar no-print" style="display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; background-color: var(--bg-white); padding: 1.25rem; border-radius: 6px; border: 1.5px solid var(--border-color);">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; width: 100%;">
+              <div class="form-group" style="margin: 0;">
+                <label for="resultsFilterSession" style="font-size: 0.75rem; font-weight: 700; color: var(--primary); text-transform: uppercase; display: block; margin-bottom: 0.35rem;">Session</label>
+                <select id="resultsFilterSession" class="form-control" style="width: 100%; font-family: 'Poppins', sans-serif; background-color: var(--bg-slate); border: 1.5px solid var(--border-color); border-radius: 6px; padding: 0.5rem 0.75rem;">
+                  <option value="all">All Sessions</option>
+                  <option value="2026/2027">2026/2027</option>
+                  <option value="2027/2028">2027/2028</option>
+                </select>
               </div>
-              <div class="stat-card-icon blue"><i class="fa-solid fa-chart-line"></i></div>
-            </div>
-            <div class="stat-card" style="cursor: default;">
-              <div class="stat-card-info">
-                <h5>Passed Courses</h5>
-                <div class="stat-value" id="resultsPassed">0</div>
+              <div class="form-group" style="margin: 0;">
+                <label for="resultsFilterSemester" style="font-size: 0.75rem; font-weight: 700; color: var(--primary); text-transform: uppercase; display: block; margin-bottom: 0.35rem;">Semester</label>
+                <select id="resultsFilterSemester" class="form-control" style="width: 100%; font-family: 'Poppins', sans-serif; background-color: var(--bg-slate); border: 1.5px solid var(--border-color); border-radius: 6px; padding: 0.5rem 0.75rem;">
+                  <option value="all">All Semesters</option>
+                  <option value="First Semester">First Semester</option>
+                  <option value="Second Semester">Second Semester</option>
+                </select>
               </div>
-              <div class="stat-card-icon green"><i class="fa-solid fa-circle-check"></i></div>
-            </div>
-            <div class="stat-card" style="cursor: default;">
-              <div class="stat-card-info">
-                <h5>Attempted Courses</h5>
-                <div class="stat-value" id="resultsAttempted">0</div>
-              </div>
-              <div class="stat-card-icon yellow"><i class="fa-solid fa-list-check"></i></div>
             </div>
           </div>
 
-          <!-- Printable Report Header -->
-          <div class="print-section" style="display: none; text-align: center; border-bottom: 2px solid var(--primary); padding-bottom: 1.5rem; margin-bottom: 2rem;">
-            <h2 class="font-display" style="color: var(--primary); margin-bottom: 0.25rem; font-size: 1.75rem;">DIVINE MANDATE BIBLE INSTITUTE</h2>
-            <div style="color: var(--accent); font-weight: 700; font-size: 0.85rem; letter-spacing: 1px; text-transform: uppercase;">OFFICIAL STUDENT ACADEMIC PERFORMANCE SUMMARY</div>
-            <div style="margin-top: 1rem; text-align: left; font-size: 0.9rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;" id="printResultsBio">
-              <!-- Dynamically populated bio parameters during printing -->
+          <!-- Cumulative Statistics Summary (GPA, CGPA, Passed, Attempted) -->
+          <div class="stats-grid no-print" style="margin-bottom: 2rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem;" id="resultsSummaryRow">
+            <div class="stat-card" style="cursor: default; padding: 1.25rem; background-color: var(--bg-white); border: 1px solid var(--border-color); border-radius: var(--border-radius-md);">
+              <div class="stat-card-info">
+                <h5 style="margin: 0 0 0.5rem 0; font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Filtered GPA</h5>
+                <div class="stat-value" id="resultsGPA" style="font-size: 1.75rem; font-weight: 800; color: var(--primary);">0.00</div>
+              </div>
+            </div>
+            <div class="stat-card" style="cursor: default; padding: 1.25rem; background-color: var(--bg-white); border: 1px solid var(--border-color); border-radius: var(--border-radius-md);">
+              <div class="stat-card-info">
+                <h5 style="margin: 0 0 0.5rem 0; font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Overall CGPA</h5>
+                <div class="stat-value" id="resultsCGPA" style="font-size: 1.75rem; font-weight: 800; color: var(--accent);">0.00</div>
+              </div>
+            </div>
+            <div class="stat-card" style="cursor: default; padding: 1.25rem; background-color: var(--bg-white); border: 1px solid var(--border-color); border-radius: var(--border-radius-md);">
+              <div class="stat-card-info">
+                <h5 style="margin: 0 0 0.5rem 0; font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Passed Units</h5>
+                <div class="stat-value" id="resultsPassed" style="font-size: 1.75rem; font-weight: 800; color: var(--success);">0</div>
+              </div>
+            </div>
+            <div class="stat-card" style="cursor: default; padding: 1.25rem; background-color: var(--bg-white); border: 1px solid var(--border-color); border-radius: var(--border-radius-md);">
+              <div class="stat-card-info">
+                <h5 style="margin: 0 0 0.5rem 0; font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Attempted Units</h5>
+                <div class="stat-value" id="resultsAttempted" style="font-size: 1.75rem; font-weight: 800; color: #DFAD11;">0</div>
+              </div>
             </div>
           </div>
 
-          <!-- Results Table -->
-          <div class="table-container">
-            <table class="custom-table">
+          <!-- Printable Landscape Transcript (Visible only during printing / dynamic generation) -->
+          <div id="printableTranscriptSection" style="display: none; background-color: #fff; padding: 3rem; border: 4px double var(--primary); border-radius: 4px; box-shadow: 0 0 10px rgba(0,0,0,0.05); margin-bottom: 2rem; color: #111;">
+            <div style="text-align: center; border-bottom: 2.5px solid var(--primary); padding-bottom: 1.25rem; margin-bottom: 1.75rem;">
+              <h1 class="font-display" style="color: var(--primary); font-size: 2.25rem; margin-bottom: 0.25rem; font-weight: 800; letter-spacing: 0.5px;">DIVINE MANDATE BIBLE INSTITUTE</h1>
+              <div style="color: var(--accent); font-weight: 800; font-size: 0.95rem; letter-spacing: 1.5px; text-transform: uppercase;">OFFICIAL ACADEMIC TRANSCRIPT OF RECORD</div>
+              <p style="margin: 0.25rem 0 0 0; font-size: 0.8rem; font-style: italic; color: #555;">Goshen 13, Kusimo Street, Idi-Aba, Abeokuta, Ogun State, Nigeria.</p>
+            </div>
+
+            <!-- Bio Parameters Grid -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; font-size: 0.88rem; margin-bottom: 1.75rem; background-color: #f9f9f9; padding: 1rem; border: 1px solid #ddd; border-radius: 4px;">
+              <div>
+                <div style="margin-bottom: 0.4rem;"><strong>Student Name:</strong> <span id="transFullname" style="text-transform: uppercase;">-</span></div>
+                <div style="margin-bottom: 0.4rem;"><strong>Matric Number:</strong> <span id="transMatric">-</span></div>
+                <div><strong>Theological Programme:</strong> <span id="transProgramme">-</span></div>
+              </div>
+              <div>
+                <div style="margin-bottom: 0.4rem;"><strong>Academic Session:</strong> <span id="transSession">-</span></div>
+                <div style="margin-bottom: 0.4rem;"><strong>Report Date:</strong> <span id="transReportDate">-</span></div>
+                <div><strong>Grading Status:</strong> <span style="color: green; font-weight: 700;"><i class="fa-solid fa-circle-check"></i> COMMITTED & OFFICIAL</span></div>
+              </div>
+            </div>
+
+            <!-- Transcript Table -->
+            <div style="border: 1.5px solid #222; border-radius: 2px; margin-bottom: 2rem; overflow: hidden;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left;">
+                <thead>
+                  <tr style="background-color: var(--primary); color: white; border-bottom: 2px solid #222;">
+                    <th style="padding: 0.75rem; font-weight: 700;">Course Code</th>
+                    <th style="padding: 0.75rem; font-weight: 700;">Course Title</th>
+                    <th style="padding: 0.75rem; font-weight: 700; text-align: center;">Units</th>
+                    <th style="padding: 0.75rem; font-weight: 700; text-align: center;">Semester</th>
+                    <th style="padding: 0.75rem; font-weight: 700; text-align: center;">Session</th>
+                    <th style="padding: 0.75rem; font-weight: 700; text-align: center;">Score</th>
+                    <th style="padding: 0.75rem; font-weight: 700; text-align: center;">Grade</th>
+                    <th style="padding: 0.75rem; font-weight: 700; text-align: center;">GP</th>
+                  </tr>
+                </thead>
+                <tbody id="printableTranscriptTableBody" style="background-color: #fff;">
+                  <!-- Dynamic rows -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Transcript Cumulative Stats Card -->
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; border: 1.5px solid #222; background-color: #f5f5f5; padding: 1rem; text-align: center; font-size: 0.9rem; font-weight: 700; margin-bottom: 2.5rem; border-radius: 4px;">
+              <div>Attempted Units: <span id="transMetaAttempted" style="color: var(--primary); font-weight: 800;">-</span></div>
+              <div>Passed Units: <span id="transMetaPassed" style="color: green; font-weight: 800;">-</span></div>
+              <div>Filtered GPA: <span id="transMetaGPA" style="color: var(--primary); font-weight: 800;">-</span></div>
+              <div>Cumulative CGPA: <span id="transMetaCGPA" style="color: var(--accent); font-weight: 800;">-</span></div>
+            </div>
+
+            <!-- Signatures and seal section -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; padding: 1rem 0; flex-wrap: wrap; gap: 2rem;">
+              <div style="text-align: center; width: 220px;">
+                <div style="font-size: 0.85rem; font-style: italic; color: #555; margin-bottom: 3.5rem;">Signature certified securely</div>
+                <div style="border-top: 1.5px solid #222; padding-top: 0.4rem; font-weight: 700; font-size: 0.85rem; color: var(--primary);">Registrar & Seal</div>
+              </div>
+              <div style="border: 2px solid var(--accent); border-radius: 50%; width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--primary); font-weight: 900; font-size: 0.7rem; line-height: 1.2; letter-spacing: 0.5px; opacity: 0.85; border-style: dashed;">
+                DIMABIN<br>OFFICIAL<br>SEAL
+              </div>
+              <div style="text-align: center; width: 220px;">
+                <div style="font-size: 0.85rem; font-style: italic; color: #555; margin-bottom: 3.5rem;">Theological Coordinator Approved</div>
+                <div style="border-top: 1.5px solid #222; padding-top: 0.4rem; font-weight: 700; font-size: 0.85rem; color: var(--primary);">Director of Studies</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Web view Results Table -->
+          <div class="table-container no-print" id="webViewResultsTableContainer">
+            <table class="custom-table" style="width: 100%;">
               <thead>
                 <tr>
                   <th>Course Code</th>
                   <th>Course Title</th>
-                  <th>Semester</th>
-                  <th>Session</th>
-                  <th style="text-align: right;">Score</th>
-                  <th style="text-align: center;">Grade</th>
+                  <th style="text-align: center; width: 70px;">Units</th>
+                  <th style="text-align: center;">Semester</th>
+                  <th style="text-align: center;">Session</th>
+                  <th style="text-align: center; width: 80px;">Score</th>
+                  <th style="text-align: center; width: 70px;">Grade</th>
+                  <th style="text-align: center; width: 70px;">GP</th>
+                  <th style="text-align: center; width: 90px;">Remark</th>
                 </tr>
               </thead>
               <tbody id="resultsTableBody">

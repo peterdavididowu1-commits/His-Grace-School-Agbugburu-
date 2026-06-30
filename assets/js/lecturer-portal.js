@@ -1009,45 +1009,88 @@ async function renderResultUploadTab() {
     const workspace = document.getElementById("gradeSheetWorkspace");
     const tbody = document.getElementById("gradingWorkspaceTableBody");
 
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 3rem 0;"><i class="fa-solid fa-spinner fa-spin"></i> Initializing Grading Sheet Workspace...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; padding: 3rem 0;"><i class="fa-solid fa-spinner fa-spin"></i> Initializing Advanced Grading Sheet Workspace...</td></tr>`;
     workspace.style.display = "block";
 
     try {
-      // 1. Fetch existing results
-      activeExistingResultsMap = {};
-      const resultsQuery = query(
-        collection(db, "results"),
-        where("courseCode", "==", code),
-        where("academicSession", "==", timelineSettings.session)
-      );
-      const resSnap = await getDocs(resultsQuery);
-      let publishedCount = 0;
-      let draftCount = 0;
+      // 1. Fetch matching course details for metadata
+      const matchedCourse = officialCoursesList.find(c => c.courseCode === code);
+      const courseTitle = matchedCourse ? (matchedCourse.courseTitle || matchedCourse.title || "Theology Course") : "Theology Course";
 
-      resSnap.forEach(docSnap => {
-        const data = docSnap.data();
-        activeExistingResultsMap[data.studentId] = { id: docSnap.id, ...data };
-        if (data.status === "Published") publishedCount++;
-        else draftCount++;
-      });
+      // 2. Check if CBT score import is enabled by administrative setup
+      let cbtImportEnabled = false;
+      try {
+        const timelineSnap = await getDoc(doc(db, "settings", "timeline_settings"));
+        if (timelineSnap.exists()) {
+          cbtImportEnabled = timelineSnap.data().cbtImportEnabled === true;
+        }
+      } catch (e) {
+        console.warn("Timeline settings fetch failed:", e);
+      }
+
+      // 3. Fetch existing submitted/draft results from database
+      const docId = `${code}_${timelineSettings.session.replace(/\//g, "-")}_${timelineSettings.semester}`;
+      const resultsRef = doc(db, "results", docId);
+      const resultsSnap = await getDoc(resultsRef);
+      
+      const draftRef = doc(db, "resultDrafts", docId);
+      const draftSnap = await getDoc(draftRef);
+
+      let resultsData = null;
+      let statusText = "Pending Upload";
+      let adminComment = "";
+      let isLocked = false;
+
+      if (resultsSnap.exists()) {
+        resultsData = resultsSnap.data();
+        statusText = resultsData.status || "Submitted";
+        adminComment = resultsData.adminComment || "";
+        if (statusText === "Submitted" || statusText === "Approved" || statusText === "Published") {
+          isLocked = true;
+        }
+      } else if (draftSnap.exists()) {
+        resultsData = draftSnap.data();
+        statusText = "Draft";
+      }
 
       // Update status banner indicator
       const statusInd = document.getElementById("resultsStatusIndicator");
       if (statusInd) {
         statusInd.style.display = "inline-block";
-        if (publishedCount > 0 && draftCount === 0) {
+        if (statusText === "Published") {
           statusInd.className = "status-badge cleared";
           statusInd.innerHTML = `<i class="fa-solid fa-circle-check"></i> Published`;
-        } else if (draftCount > 0) {
+        } else if (statusText === "Approved") {
+          statusInd.className = "status-badge cleared";
+          statusInd.innerHTML = `<i class="fa-solid fa-thumbs-up"></i> Approved`;
+        } else if (statusText === "Submitted") {
           statusInd.className = "status-badge pending";
-          statusInd.innerHTML = `<i class="fa-solid fa-file-pen"></i> Draft Version Active`;
+          statusInd.innerHTML = `<i class="fa-solid fa-hourglass-half"></i> Pending Approval`;
+        } else if (statusText === "Returned" || statusText === "Rejected") {
+          statusInd.className = "status-badge danger";
+          statusInd.innerHTML = `<i class="fa-solid fa-reply"></i> Returned by Admin`;
+        } else if (statusText === "Draft") {
+          statusInd.className = "status-badge pending";
+          statusInd.innerHTML = `<i class="fa-solid fa-file-pen"></i> Draft Worklist`;
         } else {
           statusInd.className = "status-badge info";
           statusInd.innerHTML = `<i class="fa-solid fa-circle-info"></i> Pending Evaluation`;
         }
       }
 
-      // 2. Fetch enrolled students
+      // Show admin feedback comment box if available and results returned/rejected
+      const commentBox = document.getElementById("adminCommentBox");
+      const commentSpan = document.getElementById("adminCommentSpan");
+      if (commentBox && commentSpan) {
+        if (adminComment && (statusText === "Returned" || statusText === "Rejected")) {
+          commentBox.style.display = "block";
+          commentSpan.textContent = adminComment;
+        } else {
+          commentBox.style.display = "none";
+        }
+      }
+
+      // 4. Fetch enrolled students registered for this course code
       const regSnap = await getDocs(collection(db, "registrations"));
       activeCourseGradingList = [];
       
@@ -1068,42 +1111,80 @@ async function renderResultUploadTab() {
         }
       });
 
+      // Update course metadata display card
+      const metaCard = document.getElementById("courseDetailsInfoCard");
+      if (metaCard) {
+        metaCard.innerHTML = `
+          <div><strong><i class="fa-solid fa-code"></i> Course Code:</strong> <span style="color: var(--primary); font-weight: 700;">${code}</span></div>
+          <div><strong><i class="fa-solid fa-book-bible"></i> Course Title:</strong> <span style="color: var(--primary); font-weight: 700;">${courseTitle}</span></div>
+          <div><strong><i class="fa-solid fa-calendar-day"></i> Semester:</strong> <span style="color: var(--primary); font-weight: 700;">${timelineSettings.semester}</span></div>
+          <div><strong><i class="fa-solid fa-clock"></i> Session:</strong> <span style="color: var(--primary); font-weight: 700;">${timelineSettings.session}</span></div>
+          <div><strong><i class="fa-solid fa-user-group"></i> Registered Students:</strong> <span style="color: var(--accent); font-weight: 800;">${activeCourseGradingList.length}</span></div>
+        `;
+      }
+
+      // Configure CBT Score Import button display
+      const btnImport = document.getElementById("btnImportCbtScores");
+      if (btnImport) {
+        if (cbtImportEnabled && !isLocked) {
+          btnImport.style.display = "inline-flex";
+        } else {
+          btnImport.style.display = "none";
+        }
+      }
+
+      // Disable/Enable top buttons based on lock state
+      const btnSave = document.getElementById("btnSaveDraftResults");
+      const btnPub = document.getElementById("btnPublishResults");
+      if (btnSave) btnSave.style.display = isLocked ? "none" : "inline-flex";
+      if (btnPub) btnPub.style.display = isLocked ? "none" : "inline-flex";
+
       if (activeCourseGradingList.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 3rem 0;">No enrolled student found registered in ${code} for this session.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; color: var(--text-muted); padding: 3rem 0;">No enrolled student found registered in ${code} for this session.</td></tr>`;
         return;
       }
 
       // Render workspace rows
       tbody.innerHTML = "";
       activeCourseGradingList.forEach(student => {
-        const exist = activeExistingResultsMap[student.studentId] || {};
-        const caVal = exist.caScore !== undefined ? exist.caScore : "";
-        const examVal = exist.examScore !== undefined ? exist.examScore : "";
-        const totalVal = exist.score !== undefined ? exist.score : "-";
-        const gradeVal = exist.grade !== undefined ? exist.grade : "-";
-        const statusText = exist.status || "Draft";
-        const isPub = statusText === "Published";
+        // Find existing student record inside results payload if exists
+        const exist = resultsData && resultsData.students ? resultsData.students.find(s => s.studentId === student.studentId) : null;
+        
+        const attVal = exist && exist.attendance !== undefined ? exist.attendance : "";
+        const asgVal = exist && exist.assignment !== undefined ? exist.assignment : "";
+        const testVal = exist && exist.test !== undefined ? exist.test : "";
+        const pracVal = exist && exist.practical !== undefined ? exist.practical : "";
+        const examVal = exist && exist.examScore !== undefined ? exist.examScore : (exist && exist.exam !== undefined ? exist.exam : "");
+        const totalVal = exist && exist.total !== undefined ? exist.total : "-";
+        const gradeVal = exist && exist.grade !== undefined ? exist.grade : "-";
+        const gpVal = exist && exist.gp !== undefined ? exist.gp : "-";
+        const remarkVal = exist && exist.remark !== undefined ? exist.remark : "-";
 
         const row = `
           <tr data-student-id="${student.studentId}">
             <td><strong>${student.fullName}</strong></td>
             <td><code>${student.matricNumber}</code></td>
             <td>
-              <input type="number" class="form-control ca-input" min="0" max="30" placeholder="CA (0-30)" value="${caVal}" style="width: 100%; text-align: center; padding: 0.4rem; background-color: var(--bg-slate); border: 1px solid var(--border-color); border-radius: 4px;" ${isPub ? 'disabled' : ''}>
+              <input type="number" class="form-control att-input" min="0" max="10" placeholder="0-10" value="${attVal}" style="width: 100%; text-align: center; padding: 0.4rem; background-color: var(--bg-slate); border: 1px solid var(--border-color); border-radius: 4px;" ${isLocked ? 'disabled' : ''}>
             </td>
             <td>
-              <input type="number" class="form-control exam-input" min="0" max="70" placeholder="Exam (0-70)" value="${examVal}" style="width: 100%; text-align: center; padding: 0.4rem; background-color: var(--bg-slate); border: 1px solid var(--border-color); border-radius: 4px;" ${isPub ? 'disabled' : ''}>
+              <input type="number" class="form-control asg-input" min="0" max="10" placeholder="0-10" value="${asgVal}" style="width: 100%; text-align: center; padding: 0.4rem; background-color: var(--bg-slate); border: 1px solid var(--border-color); border-radius: 4px;" ${isLocked ? 'disabled' : ''}>
+            </td>
+            <td>
+              <input type="number" class="form-control test-input" min="0" max="10" placeholder="0-10" value="${testVal}" style="width: 100%; text-align: center; padding: 0.4rem; background-color: var(--bg-slate); border: 1px solid var(--border-color); border-radius: 4px;" ${isLocked ? 'disabled' : ''}>
+            </td>
+            <td>
+              <input type="number" class="form-control prac-input" min="0" max="10" placeholder="Optional" value="${pracVal}" style="width: 100%; text-align: center; padding: 0.4rem; background-color: var(--bg-slate); border: 1px solid var(--border-color); border-radius: 4px;" ${isLocked ? 'disabled' : ''}>
+            </td>
+            <td>
+              <input type="number" class="form-control exam-input" min="0" max="70" placeholder="0-70" value="${examVal}" style="width: 100%; text-align: center; padding: 0.4rem; background-color: var(--bg-slate); border: 1px solid var(--border-color); border-radius: 4px;" ${isLocked ? 'disabled' : ''}>
             </td>
             <td style="text-align: center; font-weight: 700; color: var(--primary);" class="row-total-score">${totalVal}</td>
             <td style="text-align: center;" class="row-grade">
               <span class="status-badge ${gradeVal === 'F' ? '' : 'cleared'}" style="padding: 0.2rem 0.6rem; font-size: 0.85rem; font-weight: 800;">${gradeVal}</span>
             </td>
-            <td style="text-align: center;" class="row-result-pass-fail">-</td>
-            <td style="text-align: center;">
-              <span class="status-badge ${isPub ? 'cleared' : 'pending'}" style="padding: 0.2rem 0.6rem; font-size: 0.85rem; font-weight: 700;" class="row-workflow-status">
-                ${statusText}
-              </span>
-            </td>
+            <td style="text-align: center; font-weight: 700; color: var(--accent);" class="row-gp">${gpVal}</td>
+            <td style="text-align: center;" class="row-result-pass-fail">${remarkVal}</td>
           </tr>
         `;
         tbody.insertAdjacentHTML("beforeend", row);
@@ -1114,31 +1195,53 @@ async function renderResultUploadTab() {
 
     } catch (err) {
       console.error("Grading load failed:", err);
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: red;">Workspace compilation error occurred.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; color: red;">Workspace compilation error occurred: ${err.message}</td></tr>`;
     }
   };
 }
 
-// Interactive Matrix calculation logic (CA + Exam)
+// Interactive Matrix calculation logic (Attendance, Assignment, Test, Practical, Exam)
 function setupGradingCalculationTriggers() {
   const tbody = document.getElementById("gradingWorkspaceTableBody");
   const rows = tbody.querySelectorAll("tr[data-student-id]");
 
   rows.forEach(row => {
-    const caInput = row.querySelector(".ca-input");
+    const attInput = row.querySelector(".att-input");
+    const asgInput = row.querySelector(".asg-input");
+    const testInput = row.querySelector(".test-input");
+    const pracInput = row.querySelector(".prac-input");
     const examInput = row.querySelector(".exam-input");
     const totalScoreCell = row.querySelector(".row-total-score");
     const gradeCell = row.querySelector(".row-grade");
-    const passFailCell = row.querySelector(".row-result-pass-fail");
+    const gpCell = row.querySelector(".row-gp");
+    const remarkCell = row.querySelector(".row-result-pass-fail");
 
     function calculate() {
-      const ca = parseFloat(caInput.value) || 0;
+      const att = parseFloat(attInput.value) || 0;
+      const asg = parseFloat(asgInput.value) || 0;
+      const test = parseFloat(testInput.value) || 0;
+      const prac = parseFloat(pracInput.value) || 0;
       const exam = parseFloat(examInput.value) || 0;
 
       // Ensure valid boundaries
-      if (caInput.value !== "" && (ca < 0 || ca > 30)) {
-        window.showToast("Continuous Assessment scores must range between 0 and 30.", "warning");
-        caInput.value = Math.max(0, Math.min(30, ca));
+      if (attInput.value !== "" && (att < 0 || att > 10)) {
+        window.showToast("Attendance scores must range between 0 and 10.", "warning");
+        attInput.value = Math.max(0, Math.min(10, att));
+        return;
+      }
+      if (asgInput.value !== "" && (asg < 0 || asg > 10)) {
+        window.showToast("Assignment scores must range between 0 and 10.", "warning");
+        asgInput.value = Math.max(0, Math.min(10, asg));
+        return;
+      }
+      if (testInput.value !== "" && (test < 0 || test > 10)) {
+        window.showToast("Test scores must range between 0 and 10.", "warning");
+        testInput.value = Math.max(0, Math.min(10, test));
+        return;
+      }
+      if (pracInput.value !== "" && (prac < 0 || prac > 10)) {
+        window.showToast("Practical scores must range between 0 and 10.", "warning");
+        pracInput.value = Math.max(0, Math.min(10, prac));
         return;
       }
       if (examInput.value !== "" && (exam < 0 || exam > 70)) {
@@ -1147,23 +1250,27 @@ function setupGradingCalculationTriggers() {
         return;
       }
 
-      if (caInput.value === "" && examInput.value === "") {
+      if (attInput.value === "" && asgInput.value === "" && testInput.value === "" && examInput.value === "") {
         totalScoreCell.textContent = "-";
         gradeCell.innerHTML = `<span class="status-badge" style="padding: 0.2rem 0.6rem; font-size: 0.85rem; font-weight: 800;">-</span>`;
-        passFailCell.innerHTML = `-`;
+        gpCell.textContent = "-";
+        remarkCell.innerHTML = `-`;
         return;
       }
 
-      const total = Math.min(100, Math.round(ca + exam));
+      const total = Math.min(100, Math.round(att + asg + test + prac + exam));
       totalScoreCell.textContent = total;
 
-      // Grade Determination (A-F Matrix)
+      // Grade Determination (DIMABIN scale)
       let grade = "F";
-      let isPass = false;
-      if (total >= 70) { grade = "A"; isPass = true; }
-      else if (total >= 60) { grade = "B"; isPass = true; }
-      else if (total >= 50) { grade = "C"; isPass = true; }
-      else if (total >= 40) { grade = "D"; isPass = true; }
+      let gp = 0;
+      let remark = "FAIL";
+
+      if (total >= 70) { grade = "A"; gp = 5; remark = "PASS"; }
+      else if (total >= 60) { grade = "B"; gp = 4; remark = "PASS"; }
+      else if (total >= 50) { grade = "C"; gp = 3; remark = "PASS"; }
+      else if (total >= 45) { grade = "D"; gp = 2; remark = "PASS"; }
+      else if (total >= 40) { grade = "E"; gp = 1; remark = "PASS"; }
 
       // Update cells
       gradeCell.innerHTML = `
@@ -1171,15 +1278,19 @@ function setupGradingCalculationTriggers() {
           ${grade}
         </span>
       `;
+      gpCell.textContent = gp;
 
-      passFailCell.innerHTML = `
-        <span class="status-badge ${isPass ? 'cleared' : ''}" style="padding: 0.2rem 0.5rem; font-size: 0.8rem; font-weight: 700;">
-          ${isPass ? 'PASS' : 'FAIL'}
+      remarkCell.innerHTML = `
+        <span class="status-badge ${remark === 'PASS' ? 'cleared' : ''}" style="padding: 0.2rem 0.5rem; font-size: 0.8rem; font-weight: 700;">
+          ${remark}
         </span>
       `;
     }
 
-    caInput.addEventListener("input", calculate);
+    attInput.addEventListener("input", calculate);
+    asgInput.addEventListener("input", calculate);
+    testInput.addEventListener("input", calculate);
+    pracInput.addEventListener("input", calculate);
     examInput.addEventListener("input", calculate);
     
     // Initial compute on load
@@ -1187,7 +1298,7 @@ function setupGradingCalculationTriggers() {
   });
 }
 
-// Bulk Actions: Save Draft and Publish
+// Bulk Actions: Save Draft and Submit Results
 const btnSaveDraft = document.getElementById("btnSaveDraftResults");
 const btnPublish = document.getElementById("btnPublishResults");
 
@@ -1195,7 +1306,75 @@ if (btnSaveDraft) {
   btnSaveDraft.addEventListener("click", () => handleResultSubmissionFlow("Draft"));
 }
 if (btnPublish) {
-  btnPublish.addEventListener("click", () => handleResultSubmissionFlow("Published"));
+  btnPublish.addEventListener("click", () => handleResultSubmissionFlow("Submitted"));
+}
+
+// Bind CBT Exam Score Import triggered logic
+const btnImportCbt = document.getElementById("btnImportCbtScores");
+if (btnImportCbt) {
+  btnImportCbt.addEventListener("click", async () => {
+    const courseCode = document.getElementById("resultsCourseSelector").value;
+    if (!courseCode) return;
+
+    try {
+      btnImportCbt.disabled = true;
+      btnImportCbt.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Importing...`;
+
+      // 1. Fetch matching examinations in published status
+      const examSnap = await getDocs(query(
+        collection(db, "cbtExams"),
+        where("courseCode", "==", courseCode),
+        where("academicSession", "==", timelineSettings.session),
+        where("semester", "==", timelineSettings.semester)
+      ));
+
+      if (examSnap.empty) {
+        window.showToast("No active scheduled CBT exams found for this course session.", "warning");
+        return;
+      }
+
+      const examIds = examSnap.docs.map(d => d.id);
+
+      // 2. Query CBT results committed by students
+      const cbtResultsSnap = await getDocs(collection(db, "cbtResults"));
+      const cbtScoresMap = {};
+
+      cbtResultsSnap.forEach(d => {
+        const r = d.data();
+        if (examIds.includes(r.examId)) {
+          cbtScoresMap[r.studentId] = r.percentage;
+        }
+      });
+
+      // 3. Map into workspace inputs
+      const tbody = document.getElementById("gradingWorkspaceTableBody");
+      const rows = tbody.querySelectorAll("tr[data-student-id]");
+      let count = 0;
+
+      rows.forEach(row => {
+        const studentId = row.getAttribute("data-student-id");
+        const percentage = cbtScoresMap[studentId];
+        if (percentage !== undefined) {
+          const testInput = row.querySelector(".test-input");
+          if (testInput && !testInput.disabled) {
+            // Scale percentage out of 10 for Continuous Assessment Test field
+            testInput.value = Math.min(10, Math.round(percentage / 10));
+            testInput.dispatchEvent(new Event("input"));
+            count++;
+          }
+        }
+      });
+
+      window.showToast(`Successfully imported ${count} CBT scores into Test column (scaled out of 10 marks).`, "success");
+
+    } catch (err) {
+      console.error("CBT results import failed:", err);
+      window.showToast("Import failed: " + err.message, "error");
+    } finally {
+      btnImportCbt.disabled = false;
+      btnImportCbt.innerHTML = `<i class="fa-solid fa-cloud-arrow-down"></i> Import CBT Scores`;
+    }
+  });
 }
 
 async function handleResultSubmissionFlow(targetStatus) {
@@ -1211,14 +1390,13 @@ async function handleResultSubmissionFlow(targetStatus) {
     return;
   }
 
-  if (targetStatus === "Published") {
-    const confirmPub = confirm("Are you sure you want to PUBLISH these results?\nOnce published, they are permanently locked and made visible to all student portals instantly.");
-    if (!confirmPub) return;
-  }
-
   const tbody = document.getElementById("gradingWorkspaceTableBody");
   const rows = tbody.querySelectorAll("tr[data-student-id]");
-  let successfulSaves = 0;
+
+  if (targetStatus === "Submitted") {
+    const confirmPub = confirm("Are you sure you want to SUBMIT these results to the Administrator for approval?\nOnce submitted, they are locked from editing until approved or returned.");
+    if (!confirmPub) return;
+  }
 
   if (btnSaveDraft) btnSaveDraft.disabled = true;
   if (btnPublish) btnPublish.disabled = true;
@@ -1226,56 +1404,72 @@ async function handleResultSubmissionFlow(targetStatus) {
   window.showToast(`Processing academic grades matrix (${targetStatus})...`, "info");
 
   try {
+    const studentsList = [];
+    
     for (let row of rows) {
       const studentId = row.getAttribute("data-student-id");
-      const caInput = row.querySelector(".ca-input");
-      const examInput = row.querySelector(".exam-input");
-
-      // Skip empty inputs
-      if (caInput.value === "" && examInput.value === "") continue;
-
-      // Skip already published records to prevent overwrites
-      const existing = activeExistingResultsMap[studentId] || {};
-      if (existing.status === "Published") continue;
-
-      const ca = parseFloat(caInput.value) || 0;
-      const exam = parseFloat(examInput.value) || 0;
-      const total = Math.min(100, Math.round(ca + exam));
+      const fullName = row.querySelector("strong").textContent;
+      const matricNumber = row.querySelector("code").textContent;
+      
+      const attVal = parseFloat(row.querySelector(".att-input").value) || 0;
+      const asgVal = parseFloat(row.querySelector(".asg-input").value) || 0;
+      const testVal = parseFloat(row.querySelector(".test-input").value) || 0;
+      const pracVal = parseFloat(row.querySelector(".prac-input").value) || 0;
+      const examVal = parseFloat(row.querySelector(".exam-input").value) || 0;
+      const total = Math.min(100, Math.round(attVal + asgVal + testVal + pracVal + examVal));
 
       let grade = "F";
-      if (total >= 70) grade = "A";
-      else if (total >= 60) grade = "B";
-      else if (total >= 50) grade = "C";
-      else if (total >= 40) grade = "D";
+      let gp = 0;
+      let remark = "FAIL";
 
-      let remark = "Fail";
-      if (grade === "A") remark = "Excellent";
-      else if (grade === "B") remark = "Very Good";
-      else if (grade === "C") remark = "Good";
-      else if (grade === "D") remark = "Pass";
+      if (total >= 70) { grade = "A"; gp = 5; remark = "PASS"; }
+      else if (total >= 60) { grade = "B"; gp = 4; remark = "PASS"; }
+      else if (total >= 50) { grade = "C"; gp = 3; remark = "PASS"; }
+      else if (total >= 45) { grade = "D"; gp = 2; remark = "PASS"; }
+      else if (total >= 40) { grade = "E"; gp = 1; remark = "PASS"; }
 
-      // Result document schema
-      const docId = `${studentId.replace(/\//g, "-")}_${courseCode}_${timelineSettings.session.replace(/\//g, "-")}`;
-      const payload = {
-        studentId: studentId,
-        courseCode: courseCode,
-        caScore: ca,
-        examScore: exam,
-        score: total,
-        grade: grade,
-        remark: remark,
-        semester: timelineSettings.semester,
-        academicSession: timelineSettings.session,
-        status: targetStatus,
-        uploadedBy: currentLecturerDoc.lecturerId,
-        uploadedAt: new Date().toISOString()
-      };
-
-      await setDoc(doc(db, "results", docId), payload);
-      successfulSaves++;
+      studentsList.push({
+        studentId,
+        fullName,
+        matricNumber,
+        attendance: attVal,
+        assignment: asgVal,
+        test: testVal,
+        practical: pracVal,
+        examScore: examVal,
+        total,
+        grade,
+        gp,
+        remark
+      });
     }
 
-    window.showToast(`Successfully registered ${successfulSaves} student grades.`, "success");
+    const docId = `${courseCode}_${timelineSettings.session.replace(/\//g, "-")}_${timelineSettings.semester}`;
+    const payload = {
+      courseCode,
+      academicSession: timelineSettings.session,
+      semester: timelineSettings.semester,
+      lecturerId: currentLecturerDoc.lecturerId,
+      lecturerName: currentLecturerDoc.fullName,
+      status: targetStatus,
+      lastUpdated: new Date().toISOString(),
+      students: studentsList
+    };
+
+    if (targetStatus === "Draft") {
+      await setDoc(doc(db, "resultDrafts", docId), payload);
+      window.showToast("Draft grades worksheet successfully saved.", "success");
+    } else {
+      await setDoc(doc(db, "results", docId), payload);
+      // Clean up previous drafts if any
+      try {
+        await deleteDoc(doc(db, "resultDrafts", docId));
+      } catch (err) {
+        console.warn("Draft cleanup omitted:", err);
+      }
+      window.showToast("Results worksheet successfully submitted to Super Admin.", "success");
+    }
+
     // Reload active selector workspace
     document.getElementById("resultsCourseSelector").dispatchEvent(new Event("change"));
 

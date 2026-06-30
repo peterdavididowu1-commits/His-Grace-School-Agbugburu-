@@ -1177,6 +1177,9 @@
           <button class="sidebar-nav-btn" data-tab="cbt-control">
             <i class="fa-solid fa-graduation-cap"></i> CBT Control Center
           </button>
+          <button class="sidebar-nav-btn" data-tab="result-approval">
+            <i class="fa-solid fa-file-signature"></i> Result Approval
+          </button>
           <button class="sidebar-nav-btn" data-tab="emailjs">
             <i class="fa-solid fa-sliders"></i> EmailJS & Settings
           </button>
@@ -1961,6 +1964,86 @@
           </div>
         </div>
 
+        <!-- Tab: Result Approval & CBT Import Control -->
+        <div class="tab-content" id="tab-result-approval">
+          <div style="margin-bottom: 2rem;">
+            <h2 class="font-display" style="color: var(--primary); font-size: 2rem; margin-bottom: 0.5rem; font-weight: 800;">Result Approval Console</h2>
+            <p style="color: var(--text-muted);">View lecturer grading worksheets, approve, reject, or publish results system-wide.</p>
+          </div>
+
+          <!-- CBT Integration & Settings Switch Card -->
+          <div class="portal-card" style="background-color: var(--bg-white); border-radius: var(--border-radius-lg); border: 1.5px solid var(--border-color); padding: 1.5rem; margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <i class="fa-solid fa-network-wired" style="font-size: 1.75rem; color: var(--accent);"></i>
+              <div>
+                <h4 style="margin: 0; color: var(--primary); font-weight: 700; font-size: 1.05rem;">CBT score Continuous Assessment Integration</h4>
+                <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);">Enabling this allows faculty members to automatically import student CBT percentage grades into Continuous Assessment.</p>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <label class="switch" style="position: relative; display: inline-block; width: 48px; height: 24px; margin: 0;">
+                <input type="checkbox" id="adminCbtImportSwitch" style="opacity: 0; width: 0; height: 0;">
+                <span class="slider" id="adminCbtImportSlider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px;"></span>
+              </label>
+              <span id="adminCbtSwitchStatus" style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted);">Disabled</span>
+            </div>
+          </div>
+
+          <!-- Filter & Search Controls -->
+          <div class="search-filter-bar" style="display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; background-color: var(--bg-white); padding: 1.25rem; border-radius: 6px; border: 1.5px solid var(--border-color);">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; width: 100%;">
+              <div class="form-group" style="margin: 0;">
+                <label for="approvalFilterSession" style="font-size: 0.75rem; font-weight: 700; color: var(--primary); text-transform: uppercase; display: block; margin-bottom: 0.35rem;">Session</label>
+                <select id="approvalFilterSession" class="form-control" style="width: 100%; font-family: 'Poppins', sans-serif; background-color: var(--bg-slate); border: 1.5px solid var(--border-color); border-radius: 6px; padding: 0.5rem 0.75rem;">
+                  <option value="all">All Sessions</option>
+                  <option value="2026/2027">2026/2027</option>
+                  <option value="2027/2028">2027/2028</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin: 0;">
+                <label for="approvalFilterSemester" style="font-size: 0.75rem; font-weight: 700; color: var(--primary); text-transform: uppercase; display: block; margin-bottom: 0.35rem;">Semester</label>
+                <select id="approvalFilterSemester" class="form-control" style="width: 100%; font-family: 'Poppins', sans-serif; background-color: var(--bg-slate); border: 1.5px solid var(--border-color); border-radius: 6px; padding: 0.5rem 0.75rem;">
+                  <option value="all">All Semesters</option>
+                  <option value="First Semester">First Semester</option>
+                  <option value="Second Semester">Second Semester</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin: 0;">
+                <label for="approvalFilterCourse" style="font-size: 0.75rem; font-weight: 700; color: var(--primary); text-transform: uppercase; display: block; margin-bottom: 0.35rem;">Course Code</label>
+                <input type="text" id="approvalFilterCourse" placeholder="e.g. BIB101" class="form-control" style="width: 100%; font-family: 'Poppins', sans-serif; background-color: var(--bg-slate); border: 1.5px solid var(--border-color); border-radius: 6px; padding: 0.5rem 0.75rem;">
+              </div>
+              <div class="form-group" style="margin: 0;">
+                <label for="approvalFilterLecturer" style="font-size: 0.75rem; font-weight: 700; color: var(--primary); text-transform: uppercase; display: block; margin-bottom: 0.35rem;">Lecturer Name</label>
+                <input type="text" id="approvalFilterLecturer" placeholder="e.g. Dr. Olalekan" class="form-control" style="width: 100%; font-family: 'Poppins', sans-serif; background-color: var(--bg-slate); border: 1.5px solid var(--border-color); border-radius: 6px; padding: 0.5rem 0.75rem;">
+              </div>
+            </div>
+          </div>
+
+          <!-- Submissions Table -->
+          <div class="table-container" style="background-color: var(--bg-white); border-radius: 6px; overflow-x: auto; border: 1.5px solid var(--border-color); margin-bottom: 2rem;">
+            <table class="custom-table" style="width: 100%; border-collapse: collapse; min-width: 900px;">
+              <thead>
+                <tr style="background-color: var(--bg-slate); text-align: left; border-bottom: 1.5px solid var(--border-color);">
+                  <th style="padding: 1rem; color: var(--primary); font-weight: 700;">Course</th>
+                  <th style="padding: 1rem; color: var(--primary); font-weight: 700;">Session/Semester</th>
+                  <th style="padding: 1rem; color: var(--primary); font-weight: 700;">Lecturer</th>
+                  <th style="padding: 1rem; color: var(--primary); font-weight: 700; text-align: center;">Registered</th>
+                  <th style="padding: 1rem; color: var(--primary); font-weight: 700; text-align: center;">Status</th>
+                  <th style="padding: 1rem; color: var(--primary); font-weight: 700; text-align: center;">Last Updated</th>
+                  <th style="padding: 1rem; color: var(--primary); font-weight: 700; text-align: center;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="resultSubmissionsTableBody">
+                <tr>
+                  <td colspan="7" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+                    <i class="fa-solid fa-spinner fa-spin" style="margin-right: 0.5rem;"></i> Loading lecturer result submissions...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </main>
     </div>
   </div>
@@ -2169,6 +2252,70 @@
             <button type="submit" class="btn" title="Save Changes" style="background-color: #1F3B82; color: white; border: none; width: 44px; height: 44px; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.15rem; transition: background-color 0.2s;"><i class="fa-solid fa-floppy-disk"></i></button>
           </div>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detailed Result Approval & Comment Sheet Modal -->
+  <div class="modal-overlay" id="adminReviewResultModal" style="display: none; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+    <div class="modal-box" style="max-width: 1000px; width: 95%; max-height: 90vh; overflow-y: auto; background-color: var(--bg-white); border-radius: var(--border-radius-lg); border: 2px solid var(--border-color); box-shadow: 0 4px 24px rgba(0,0,0,0.2);">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid var(--border-color); padding: 1.25rem 1.5rem; background-color: var(--primary); color: white;">
+        <h3 class="font-display" style="margin: 0; font-size: 1.25rem; display: flex; align-items: center; gap: 0.5rem; font-weight: 700; color: white;"><i class="fa-solid fa-file-shield" style="color: var(--accent);"></i> Review Lecturer Grade Sheet</h3>
+        <button class="modal-close-btn" id="btnCloseReviewModal" title="Close" style="border: none; background: transparent; cursor: pointer; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: white;"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" style="padding: 1.5rem;">
+        <!-- Course info block -->
+        <div style="background-color: var(--bg-slate); border: 1px solid var(--border-color); border-radius: var(--border-radius-md); padding: 1rem; margin-bottom: 1.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; font-size: 0.85rem;">
+          <div><strong>Course Code:</strong> <span id="reviewMetaCode" style="color: var(--primary); font-weight: 700;">-</span></div>
+          <div><strong>Course Title:</strong> <span id="reviewMetaTitle" style="color: var(--primary); font-weight: 700;">-</span></div>
+          <div><strong>Lecturer:</strong> <span id="reviewMetaLecturer" style="color: var(--primary); font-weight: 700;">-</span></div>
+          <div><strong>Session:</strong> <span id="reviewMetaSession" style="color: var(--primary); font-weight: 700;">-</span></div>
+          <div><strong>Semester:</strong> <span id="reviewMetaSemester" style="color: var(--primary); font-weight: 700;">-</span></div>
+          <div><strong>Workflow Status:</strong> <span id="reviewMetaStatus" class="status-badge" style="padding: 0.2rem 0.5rem; display: inline-block;">-</span></div>
+        </div>
+
+        <!-- Grade list -->
+        <div class="table-container" style="max-height: 350px; overflow-y: auto; border: 1.5px solid var(--border-color); border-radius: 4px; margin-bottom: 1.5rem;">
+          <table class="custom-table" style="font-size: 0.85rem; width: 100%;">
+            <thead>
+              <tr style="background-color: var(--bg-slate); text-align: left; position: sticky; top: 0; z-index: 1;">
+                <th style="padding: 0.75rem;">Student Name</th>
+                <th style="padding: 0.75rem;">Matric No.</th>
+                <th style="padding: 0.75rem; text-align: center;">Att (10)</th>
+                <th style="padding: 0.75rem; text-align: center;">Asg (10)</th>
+                <th style="padding: 0.75rem; text-align: center;">Test (10)</th>
+                <th style="padding: 0.75rem; text-align: center;">Prac (10)</th>
+                <th style="padding: 0.75rem; text-align: center;">Exam (70)</th>
+                <th style="padding: 0.75rem; text-align: center; font-weight: 700;">Total</th>
+                <th style="padding: 0.75rem; text-align: center;">Grade</th>
+                <th style="padding: 0.75rem; text-align: center;">GP</th>
+                <th style="padding: 0.75rem; text-align: center;">Remark</th>
+              </tr>
+            </thead>
+            <tbody id="adminReviewTableBody">
+              <!-- Dynamically rendered -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Admin Comments area -->
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+          <label for="adminReviewComments" style="font-size: 0.8rem; font-weight: 700; color: var(--primary); text-transform: uppercase; display: block; margin-bottom: 0.5rem;">Administrator Comments & Remarks (Mandatory for returns/rejections)</label>
+          <textarea id="adminReviewComments" rows="3" placeholder="Enter comments for the lecturer here if rejecting/returning, or general remarks..." class="form-control" style="width: 100%; padding: 0.75rem; border: 1.5px solid var(--border-color); border-radius: 6px; font-family: 'Poppins', sans-serif; font-size: 0.9rem; background-color: var(--bg-slate); resize: vertical;"></textarea>
+        </div>
+
+        <!-- Approval History Logs -->
+        <div id="reviewApprovalHistorySection" style="display: none; border-top: 1px solid var(--border-color); padding-top: 1.25rem; margin-bottom: 1.5rem;">
+          <h4 class="font-display" style="color: var(--primary); font-size: 0.95rem; margin-bottom: 0.75rem;"><i class="fa-solid fa-history" style="color: var(--accent);"></i> Decision & Approval History Logs</h4>
+          <div id="reviewApprovalHistoryLogs" style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.8rem; max-height: 120px; overflow-y: auto; background-color: var(--bg-slate); border-radius: 4px; padding: 0.75rem; border: 1px solid var(--border-color);">
+            <!-- History entries -->
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div style="display: flex; gap: 0.75rem; justify-content: flex-end; flex-wrap: wrap; border-top: 1px solid var(--border-color); padding-top: 1.25rem;" id="adminReviewActionsRow">
+          <!-- Populated by JS based on workflow status -->
+        </div>
       </div>
     </div>
   </div>

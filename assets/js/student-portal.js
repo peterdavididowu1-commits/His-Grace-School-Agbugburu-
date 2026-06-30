@@ -676,6 +676,8 @@ if (btnPrintRegSlip) {
 }
 
 // Fetch and render student cumulative results report
+let studentPublishedResultsList = [];
+
 async function loadResults() {
   const tbody = document.getElementById("resultsTableBody");
   const emptyMsg = document.getElementById("resultsEmptyMessage");
@@ -683,7 +685,7 @@ async function loadResults() {
 
   if (!tbody) return;
 
-  tbody.innerHTML = "<tr><td colspan='6' class='text-center py-4' style='color:var(--text-muted);'><i class='fa-solid fa-spinner fa-spin'></i> Compiling results rosters...</td></tr>";
+  tbody.innerHTML = "<tr><td colspan='9' class='text-center py-4' style='color:var(--text-muted);'><i class='fa-solid fa-spinner fa-spin'></i> Compiling results rosters...</td></tr>";
 
   try {
     // 1. Fetch courses to map titles
@@ -694,13 +696,18 @@ async function loadResults() {
       });
     }
 
-    // 2. Fetch specific student results
-    const qResults = query(collection(db, "results"), where("studentId", "==", currentStudentDoc.studentId));
+    // 2. Fetch specific student published results
+    const qResults = query(collection(db, "publishedResults"), where("studentId", "==", currentStudentDoc.studentId));
     const snapResults = await getDocs(qResults);
     
     const countBadge = document.getElementById("cardResultsCount");
 
-    if (snapResults.empty) {
+    studentPublishedResultsList = [];
+    snapResults.forEach(d => {
+      studentPublishedResultsList.push(d.data());
+    });
+
+    if (studentPublishedResultsList.length === 0) {
       tbody.innerHTML = "";
       if (emptyMsg) emptyMsg.style.display = "block";
       if (summaryRow) summaryRow.style.display = "none";
@@ -710,83 +717,178 @@ async function loadResults() {
 
     if (emptyMsg) emptyMsg.style.display = "none";
     if (summaryRow) summaryRow.style.display = "grid";
-    if (countBadge) countBadge.textContent = snapResults.size;
+    if (countBadge) countBadge.textContent = studentPublishedResultsList.length;
 
-    tbody.innerHTML = "";
-    let passed = 0;
-    let attempted = 0;
-    let qualityPointsTotal = 0;
-    let totalCredits = 0;
+    // Render results initially
+    renderFilteredStudentResults();
 
-    snapResults.forEach(docSnap => {
-      const r = docSnap.data();
-      if (r.status === "Draft") return; // Skip unpublished drafts!
-      const code = r.courseCode;
-      const matched = officialCoursesList.find(c => c.courseCode === code);
-      const title = matched ? matched.courseTitle : "Theology Course Record";
-      const credits = matched ? matched.creditUnit : 3;
-
-      attempted++;
-      if (r.grade !== "F") passed++;
-
-      // Compute GPA weightings (A=4, B=3, C=2, D=1, F=0)
-      let gpaPoint = 0;
-      switch (r.grade) {
-        case "A": gpaPoint = 4; break;
-        case "B": gpaPoint = 3; break;
-        case "C": gpaPoint = 2; break;
-        case "D": gpaPoint = 1; break;
-        default: gpaPoint = 0; break;
-      }
-
-      qualityPointsTotal += (gpaPoint * credits);
-      totalCredits += credits;
-
-      const row = `
-        <tr>
-          <td><strong>${code}</strong></td>
-          <td>${title}</td>
-          <td>${r.semester || "First Semester"}</td>
-          <td>${r.academicSession || "2026/2027"}</td>
-          <td style="text-align:right; font-weight:700; color:var(--primary);">${r.score}</td>
-          <td style="text-align:center;">
-            <span class="status-badge ${r.grade === 'F' ? '' : 'cleared'}" style="padding:0.3rem 0.8rem; font-weight:800;">${r.grade}</span>
-          </td>
-        </tr>
-      `;
-      tbody.insertAdjacentHTML("beforeend", row);
-    });
-
-    const calculatedGPA = totalCredits > 0 ? (qualityPointsTotal / totalCredits).toFixed(2) : "0.00";
-
-    // Update cumulative summary elements
-    document.getElementById("resultsGPA").textContent = calculatedGPA;
-    document.getElementById("resultsPassed").textContent = passed;
-    document.getElementById("resultsAttempted").textContent = attempted;
-
-    // Build print values
-    const printBio = document.getElementById("printResultsBio");
-    if (printBio) {
-      printBio.innerHTML = `
-        <div><strong>Student Name:</strong> ${currentStudentDoc.fullName}</div>
-        <div><strong>Student ID:</strong> ${currentStudentDoc.studentId}</div>
-        <div><strong>Matric Number:</strong> ${currentStudentDoc.matricNumber}</div>
-        <div><strong>GPA Average:</strong> ${calculatedGPA} (${passed}/${attempted} Courses Passed)</div>
-        <div><strong>Programme:</strong> ${currentStudentDoc.programme}</div>
-        <div><strong>Academic Standing:</strong> ${currentStudentDoc.status || "Active"}</div>
-      `;
-    }
+    // Bind filters
+    const fSession = document.getElementById("resultsFilterSession");
+    const fSemester = document.getElementById("resultsFilterSemester");
+    if (fSession) fSession.onchange = () => renderFilteredStudentResults();
+    if (fSemester) fSemester.onchange = () => renderFilteredStudentResults();
 
   } catch (err) {
     console.error("❌ Results load failed:", err);
-    tbody.innerHTML = "<tr><td colspan='6' class='text-center py-3' style='color:red;'><i class='fa-solid fa-triangle-exclamation'></i> Failed to load cumulative results.</td></tr>";
+    tbody.innerHTML = "<tr><td colspan='9' class='text-center py-3' style='color:red;'><i class='fa-solid fa-triangle-exclamation'></i> Failed to load cumulative results.</td></tr>";
   }
+}
+
+function renderFilteredStudentResults() {
+  const tbody = document.getElementById("resultsTableBody");
+  const tPrintBody = document.getElementById("printableTranscriptTableBody");
+  if (!tbody) return;
+
+  const fSession = document.getElementById("resultsFilterSession")?.value || "all";
+  const fSemester = document.getElementById("resultsFilterSemester")?.value || "all";
+
+  // Calculate OVERALL CGPA (always regardless of filter)
+  let overallAttemptedUnits = 0;
+  let overallPassedUnits = 0;
+  let overallQualityPoints = 0;
+
+  studentPublishedResultsList.forEach(r => {
+    const credits = parseInt(r.creditUnit || 3);
+    let gp = parseInt(r.gp);
+    if (isNaN(gp)) {
+      const total = parseInt(r.total) || 0;
+      if (total >= 70) gp = 5;
+      else if (total >= 60) gp = 4;
+      else if (total >= 50) gp = 3;
+      else if (total >= 45) gp = 2;
+      else if (total >= 40) gp = 1;
+      else gp = 0;
+    }
+    overallAttemptedUnits += credits;
+    if (r.grade !== "F") overallPassedUnits += credits;
+    overallQualityPoints += (gp * credits);
+  });
+
+  const overallCGPA = overallAttemptedUnits > 0 ? (overallQualityPoints / overallAttemptedUnits).toFixed(2) : "0.00";
+
+  // Filter list for web view & transcript printable view
+  const filtered = studentPublishedResultsList.filter(item => {
+    if (fSession !== "all" && item.academicSession !== fSession) return false;
+    if (fSemester !== "all" && item.semester !== fSemester) return false;
+    return true;
+  });
+
+  tbody.innerHTML = "";
+  if (tPrintBody) tPrintBody.innerHTML = "";
+
+  let filteredAttemptedUnits = 0;
+  let filteredPassedUnits = 0;
+  let filteredQualityPoints = 0;
+
+  filtered.forEach(r => {
+    const credits = parseInt(r.creditUnit || 3);
+    let gp = parseInt(r.gp);
+    if (isNaN(gp)) {
+      const total = parseInt(r.total) || 0;
+      if (total >= 70) gp = 5;
+      else if (total >= 60) gp = 4;
+      else if (total >= 50) gp = 3;
+      else if (total >= 45) gp = 2;
+      else if (total >= 40) gp = 1;
+      else gp = 0;
+    }
+
+    filteredAttemptedUnits += credits;
+    if (r.grade !== "F") filteredPassedUnits += credits;
+    filteredQualityPoints += (gp * credits);
+
+    const remarkText = r.remark || (r.grade === "F" ? "FAIL" : "PASS");
+
+    // Web Row
+    const webRow = `
+      <tr>
+        <td><strong>${r.courseCode}</strong></td>
+        <td>${r.courseTitle || "Bible Theology Study"}</td>
+        <td style="text-align: center; font-weight: 700;">${credits}</td>
+        <td style="text-align: center;">${r.semester}</td>
+        <td style="text-align: center;"><code>${r.academicSession}</code></td>
+        <td style="text-align: center; font-weight: 700; color: var(--primary);">${r.total}</td>
+        <td style="text-align: center;">
+          <span class="status-badge ${r.grade === 'F' ? '' : 'cleared'}" style="padding: 0.2rem 0.6rem; font-weight: 800; font-size: 0.82rem;">${r.grade}</span>
+        </td>
+        <td style="text-align: center; font-weight: 700; color: var(--accent);">${gp}</td>
+        <td style="text-align: center;">
+          <span class="status-badge ${r.grade === 'F' ? '' : 'cleared'}" style="padding: 0.2rem 0.5rem; font-weight: 700; font-size: 0.8rem;">${remarkText}</span>
+        </td>
+      </tr>
+    `;
+    tbody.insertAdjacentHTML("beforeend", webRow);
+
+    // Printable Row
+    if (tPrintBody) {
+      const printRow = `
+        <tr style="border-bottom: 1px solid #ddd;">
+          <td style="padding: 0.65rem;"><strong>${r.courseCode}</strong></td>
+          <td style="padding: 0.65rem;">${r.courseTitle || "Bible Theology Study"}</td>
+          <td style="padding: 0.65rem; text-align: center; font-weight: 700;">${credits}</td>
+          <td style="padding: 0.65rem; text-align: center;">${r.semester}</td>
+          <td style="padding: 0.65rem; text-align: center;"><code>${r.academicSession}</code></td>
+          <td style="padding: 0.65rem; text-align: center; font-weight: 700; color: var(--primary);">${r.total}</td>
+          <td style="padding: 0.65rem; text-align: center; font-weight: 800;">${r.grade}</td>
+          <td style="padding: 0.65rem; text-align: center; font-weight: 700; color: var(--accent);">${gp}</td>
+        </tr>
+      `;
+      tPrintBody.insertAdjacentHTML("beforeend", printRow);
+    }
+  });
+
+  const filteredGPA = filteredAttemptedUnits > 0 ? (filteredQualityPoints / filteredAttemptedUnits).toFixed(2) : "0.00";
+
+  // Update UI Cards
+  document.getElementById("resultsGPA").textContent = filteredGPA;
+  document.getElementById("resultsCGPA").textContent = overallCGPA;
+  document.getElementById("resultsPassed").textContent = filteredPassedUnits;
+  document.getElementById("resultsAttempted").textContent = filteredAttemptedUnits;
+
+  // Update Transcript Printable fields
+  const transName = document.getElementById("transFullname");
+  const transMatric = document.getElementById("transMatric");
+  const transProgramme = document.getElementById("transProgramme");
+  const transSession = document.getElementById("transSession");
+  const transReportDate = document.getElementById("transReportDate");
+
+  if (transName) transName.textContent = currentStudentDoc.fullName;
+  if (transMatric) transMatric.textContent = currentStudentDoc.matricNumber;
+  if (transProgramme) transProgramme.textContent = currentStudentDoc.programme;
+  if (transSession) transSession.textContent = (fSession === "all" ? "cumulative records" : fSession);
+  if (transReportDate) transReportDate.textContent = new Date().toLocaleDateString();
+
+  const transMetaAttempted = document.getElementById("transMetaAttempted");
+  const transMetaPassed = document.getElementById("transMetaPassed");
+  const transMetaGPA = document.getElementById("transMetaGPA");
+  const transMetaCGPA = document.getElementById("transMetaCGPA");
+
+  if (transMetaAttempted) transMetaAttempted.textContent = filteredAttemptedUnits;
+  if (transMetaPassed) transMetaPassed.textContent = filteredPassedUnits;
+  if (transMetaGPA) transMetaGPA.textContent = filteredGPA;
+  if (transMetaCGPA) transMetaCGPA.textContent = overallCGPA;
 }
 
 const btnPrintTranscript = document.getElementById("btnPrintTranscript");
 if (btnPrintTranscript) {
   btnPrintTranscript.addEventListener("click", () => {
+    const transSection = document.getElementById("printableTranscriptSection");
+    const webViewContainer = document.getElementById("webViewResultsTableContainer");
+    const filterBar = document.querySelector(".search-filter-bar");
+    const statsGrid = document.querySelector(".stats-grid");
+
+    if (transSection) transSection.style.display = "block";
+    if (webViewContainer) webViewContainer.style.display = "none";
+    if (filterBar) filterBar.style.display = "none";
+    if (statsGrid) statsGrid.style.display = "none";
+
     window.print();
+
+    // Restore standard viewport
+    if (transSection) transSection.style.display = "none";
+    if (webViewContainer) webViewContainer.style.display = "block";
+    if (filterBar) filterBar.style.display = "flex";
+    if (statsGrid) statsGrid.style.display = "grid";
   });
 }
 
