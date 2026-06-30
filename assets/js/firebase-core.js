@@ -1489,7 +1489,7 @@ Divine Mandate Bible Institute Registry`;
     }
 
     // Crucial user requirement: Display success message only after EmailJS confirms success
-    alert("Email successfully delivered using Direct EmailJS function");
+    await window.dimabinAlert("Email successfully delivered using Direct EmailJS function", "success");
 
     await logActivity(
       "Email Dispatched (EmailJS)",

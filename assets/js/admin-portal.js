@@ -330,7 +330,7 @@ const forgotPasswordLink = document.getElementById("forgotPasswordLink");
 if (forgotPasswordLink) {
   forgotPasswordLink.addEventListener("click", async (e) => {
     e.preventDefault();
-    const email = prompt("Enter your registered Administrator email address:");
+    const email = await window.dimabinPrompt("Enter your registered Administrator email address:");
     if (!email) return;
     if (!email.includes("@") || !email.includes(".")) {
       window.showToast("Please enter a valid email address.", "error");
@@ -747,7 +747,8 @@ async function saveRemarksOnly(id) {
 }
 
 async function processRejection(id) {
-  if (!confirm("Are you absolutely sure you want to decline this theological application?")) return;
+  const userConfirmed = await window.dimabinConfirm("Are you absolutely sure you want to decline this theological application?");
+  if (!userConfirmed) return;
   const remarks = document.getElementById("modalRemarks").value;
   try {
     await updateDoc(doc(db, "applications", id), {
@@ -767,7 +768,8 @@ async function processRejection(id) {
 async function processApproval(id) {
   const app = allApplications.find(a => a.id === id);
   if (!app) return;
-  if (!confirm(`Are you sure you want to approve and admit ${app.fullName}? This will automatically generate a matric number and register a new student.`)) return;
+  const userConfirmed = await window.dimabinConfirm(`Are you sure you want to approve and admit ${app.fullName}? This will automatically generate a matric number and register a new student.`);
+  if (!userConfirmed) return;
 
   window.showToast("Generating student portfolio credentials...", "info");
   const remarks = document.getElementById("modalRemarks").value;
@@ -1063,7 +1065,8 @@ if (btnSaveEmailJS) {
 const btnResetEmailJS = document.getElementById("btnResetEmailJS");
 if (btnResetEmailJS) {
   btnResetEmailJS.addEventListener("click", async () => {
-    if (!confirm("Restore all EmailJS variables back to system defaults?")) return;
+    const userConfirmed = await window.dimabinConfirm("Restore all EmailJS variables back to system defaults?");
+    if (!userConfirmed) return;
     try {
       await saveEmailJSConfig(DEFAULT_EMAILJS_CONFIG);
       await loadSettings();
@@ -1649,13 +1652,13 @@ async function triggerDeleteCourse(courseCode) {
         reason = `has active student course registrations in the system`;
       }
 
-      alert(`⚠️ Course Deletion Prevented!\n\nThis course cannot be deleted because it is already ${reason}.\n\nTo withdraw this course from active enrollment options, the course status will be changed to Inactive instead.`);
+      await window.dimabinAlert(`⚠️ Course Deletion Prevented!\n\nThis course cannot be deleted because it is already ${reason}.\n\nTo withdraw this course from active enrollment options, the course status will be changed to Inactive instead.`, "warning", "Course Deletion Prevented");
       await toggleCourseStatus(courseCode, "Inactive");
       return;
     }
 
     // 4. Confirm permanent deletion if completely unassigned
-    const proceed = confirm(`⚠️ Confirm Permanent Deletion\n\nAre you absolutely sure you want to permanently delete course [${courseCode}] from the DIMABIN syllabus database? This action is irreversible.`);
+    const proceed = await window.dimabinConfirm(`⚠️ Confirm Permanent Deletion\n\nAre you absolutely sure you want to permanently delete course [${courseCode}] from the DIMABIN syllabus database? This action is irreversible.`, "Confirm Permanent Deletion");
     if (proceed) {
       const { deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
       await deleteDoc(doc(db, "courses", courseCode));
@@ -2291,7 +2294,8 @@ if (editLecForm) {
 // Suspend & Activate operations
 async function toggleLecturerStatus(docId, currentStatus) {
   const newStatus = currentStatus === "Active" ? "Suspended" : "Active";
-  if (!confirm(`Are you sure you want to mark this facilitator as ${newStatus}?`)) return;
+  const userConfirmed = await window.dimabinConfirm(`Are you sure you want to mark this facilitator as ${newStatus}?`);
+  if (!userConfirmed) return;
 
   try {
     window.showToast(`Transitioning status to ${newStatus}...`, "info");
@@ -2317,7 +2321,8 @@ async function resetLecturerPassword(docId) {
     return;
   }
 
-  if (!confirm(`Reset credentials for ${lec.title || ''} ${lec.fullName || ''}? This will update Firebase Auth and prepare EmailJS dispatch.`)) return;
+  const userConfirmed = await window.dimabinConfirm(`Reset credentials for ${lec.title || ''} ${lec.fullName || ''}? This will update Firebase Auth and prepare EmailJS dispatch.`);
+  if (!userConfirmed) return;
 
   try {
     window.showToast("Generating new credentials...", "info");
@@ -2392,7 +2397,7 @@ async function resetLecturerPassword(docId) {
       console.warn("⚠️ Skipped logging EmailJS reset template:", logErr);
     }
 
-    alert(`🔐 Security Credentials Reset Completed!\n\nStaff: ${lec.title || ''} ${lec.fullName}\nNew Temporary Password: ${newTempPassword}\n\nPlease copy this password and share it with the lecturer.`);
+    await window.dimabinAlert(`🔐 Security Credentials Reset Completed!\n\nStaff: ${lec.title || ''} ${lec.fullName}\nNew Temporary Password: ${newTempPassword}\n\nPlease copy this password and share it with the lecturer.`, "success", "Security Credentials Reset Completed");
     
     await loadLecturers();
   } catch (err) {
@@ -2553,9 +2558,8 @@ async function handleAdminExamStatus(examId, newStatus) {
 }
 
 async function handleAdminDeleteExam(examId) {
-  if (!confirm("⚠️ DANGER: Permanent Deletion Request\n\nAre you absolutely sure you want to permanently delete this examination configuration? This will also disconnect existing student results and student attempts data from the active portal. This action is irreversible.")) {
-    return;
-  }
+  const userConfirmed = await window.dimabinConfirm("⚠️ DANGER: Permanent Deletion Request\n\nAre you absolutely sure you want to permanently delete this examination configuration? This will also disconnect existing student results and student attempts data from the active portal. This action is irreversible.", "Permanent Deletion Request");
+  if (!userConfirmed) return;
 
   try {
     await deleteDoc(doc(db, "cbtExams", examId));
@@ -3188,7 +3192,7 @@ async function handleWorkflowAction(actionName) {
   const semester = selectedReviewSheet.semester;
   const docId = `${courseCode}_${session.replace(/\//g, "-")}_${semester}`;
 
-  const confirmAction = confirm(`Are you sure you want to trigger "${actionName}" on this grading sheet?`);
+  const confirmAction = await window.dimabinConfirm(`Are you sure you want to trigger "${actionName}" on this grading sheet?`, `Trigger "${actionName}" Decision`);
   if (!confirmAction) return;
 
   try {

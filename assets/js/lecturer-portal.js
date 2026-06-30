@@ -36,7 +36,7 @@ if (!window.showToast) {
   window.showToast = (message, type = "success") => {
     const container = document.getElementById("toastContainer");
     if (!container) {
-      alert(`[${type.toUpperCase()}] ${message}`);
+      window.dimabinAlert(message, type);
       return;
     }
     const toast = document.createElement("div");
@@ -1444,7 +1444,7 @@ async function handleResultSubmissionFlow(targetStatus) {
   const rows = tbody.querySelectorAll("tr[data-student-id]");
 
   if (targetStatus === "Submitted") {
-    const confirmPub = confirm("Are you sure you want to SUBMIT these results to the Administrator for approval?\nOnce submitted, they are locked from editing until approved or returned.");
+    const confirmPub = await window.dimabinConfirm("Are you sure you want to SUBMIT these results to the Administrator for approval?\nOnce submitted, they are locked from editing until approved or returned.", "Confirm Submission");
     if (!confirmPub) return;
   }
 
@@ -1539,7 +1539,7 @@ async function handleResultPublishFlow() {
     return;
   }
 
-  const confirmPublish = confirm("Are you sure you want to PUBLISH these approved results? Once published, they will become official and visible to all registered students in their portals.");
+  const confirmPublish = await window.dimabinConfirm("Are you sure you want to PUBLISH these approved results? Once published, they will become official and visible to all registered students in their portals.", "Confirm Publish Results");
   if (!confirmPublish) return;
 
   const btnPub = document.getElementById("btnPublishResults");
@@ -1916,7 +1916,7 @@ if (rememberMeToggle) {
 const btnSignoutAllDevices = document.getElementById("btnSignoutAllDevices");
 if (btnSignoutAllDevices) {
   btnSignoutAllDevices.addEventListener("click", async () => {
-    const confirmLogout = confirm("Are you sure you want to log out from all active devices?");
+    const confirmLogout = await window.dimabinConfirm("Are you sure you want to log out from all active devices?", "Log Out from All Devices");
     if (!confirmLogout) return;
 
     window.showToast("Terminating active terminal authorization keys globally...", "info");
@@ -1957,7 +1957,7 @@ window.handleLogout = async (customMessage = null) => {
   if (loginForm) loginForm.reset();
 
   if (customMessage) {
-    alert(customMessage);
+    await window.dimabinAlert(customMessage, "info", "Logout Notification");
   } else {
     window.showToast("Signed out successfully.", "success");
   }
@@ -2433,7 +2433,8 @@ function previewQuestion(id) {
 async function duplicateQuestion(id) {
   const q = questionBankData.find(item => item.id === id);
   if (!q) return;
-  if (!confirm("Confirm duplicating this question?")) return;
+  const userConfirmed = await window.dimabinConfirm("Confirm duplicating this question?", "Duplicate Question");
+  if (!userConfirmed) return;
 
   try {
     const { addDoc, collection } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
@@ -2454,7 +2455,8 @@ async function duplicateQuestion(id) {
 }
 
 async function deleteQuestion(id) {
-  if (!confirm("⚠️ Are you sure you want to delete this question? This action is permanent.")) return;
+  const userConfirmed = await window.dimabinConfirm("⚠️ Are you sure you want to delete this question? This action is permanent.", "Delete Question");
+  if (!userConfirmed) return;
 
   try {
     const { deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
@@ -2494,12 +2496,12 @@ if (createExamForm) {
     // Validation: Lecturer should have enough questions in the Question Bank for this course!
     const availableQuestions = questionBankData.filter(q => q.courseCode === courseCode);
     if (availableQuestions.length < numQuestions) {
-      alert(`⚠️ Question Bank Deficit!\n\nYou have requested ${numQuestions} questions, but only ${availableQuestions.length} questions exist in your Question Bank for course ${courseCode}.\n\nPlease add more questions first, or decrease the requested exam question size.`);
+      await window.dimabinAlert(`⚠️ Question Bank Deficit!\n\nYou have requested ${numQuestions} questions, but only ${availableQuestions.length} questions exist in your Question Bank for course ${courseCode}.\n\nPlease add more questions first, or decrease the requested exam question size.`, "warning", "Question Bank Deficit");
       return;
     }
 
     if (!currentLecturerDoc.coursesAssigned || !currentLecturerDoc.coursesAssigned.includes(courseCode)) {
-      alert("⚠️ Security Violation: You can only configure examinations for courses officially assigned to your profile.");
+      await window.dimabinAlert("⚠️ Security Violation: You can only configure examinations for courses officially assigned to your profile.", "error", "Security Violation");
       return;
     }
 
@@ -2663,7 +2665,8 @@ function editExam(id) {
 }
 
 async function deleteExam(id) {
-  if (!confirm("⚠️ Confirm Assessment Purge\n\nAre you sure you want to permanently delete this examination?")) return;
+  const userConfirmed = await window.dimabinConfirm("⚠️ Confirm Assessment Purge\n\nAre you sure you want to permanently delete this examination?", "Confirm Assessment Purge");
+  if (!userConfirmed) return;
 
   try {
     const { deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
@@ -3364,7 +3367,8 @@ async function viewAttendanceLog(id, logs) {
 }
 
 async function deleteAttendanceLog(id) {
-  if (!confirm("⚠️ Are you sure you want to delete this attendance log book? This action is permanent.")) return;
+  const userConfirmed = await window.dimabinConfirm("⚠️ Are you sure you want to delete this attendance log book? This action is permanent.", "Delete Attendance Log");
+  if (!userConfirmed) return;
 
   try {
     const { deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
@@ -3550,7 +3554,8 @@ async function loadLearningMaterials() {
     container.querySelectorAll(".btn-delete-material").forEach(btn => {
       btn.addEventListener("click", async () => {
         const matId = btn.getAttribute("data-id");
-        if (!confirm("⚠️ Are you sure you want to delete this resource asset?")) return;
+        const userConfirmed = await window.dimabinConfirm("⚠️ Are you sure you want to delete this resource asset?", "Delete Resource Asset");
+        if (!userConfirmed) return;
         try {
           const { deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
           await deleteDoc(doc(db, "learningMaterials", matId));

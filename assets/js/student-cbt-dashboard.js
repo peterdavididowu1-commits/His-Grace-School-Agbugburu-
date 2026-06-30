@@ -407,7 +407,7 @@ async function initializeActiveExam() {
   const resDocId = `${currentStudentDoc.studentId.replace(/\//g, "-")}_${activeCbtExam.id}`;
   const resSnap = await getDoc(doc(db, "cbtResults", resDocId));
   if (resSnap.exists()) {
-    alert("⚠️ Security Violation: You have already completed this examination. Re-entry is strictly prohibited.");
+    await window.dimabinAlert("⚠️ Security Violation: You have already completed this examination. Re-entry is strictly prohibited.", "error", "Security Violation");
     return;
   }
 
@@ -415,7 +415,7 @@ async function initializeActiveExam() {
   const startDate = new Date(activeCbtExam.startDate);
   const endDate = new Date(activeCbtExam.endDate);
   if (now < startDate || now > endDate || activeCbtExam.status !== "Published") {
-    alert("⚠️ Security Violation: This examination is currently inactive, closed, or unpublished.");
+    await window.dimabinAlert("⚠️ Security Violation: This examination is currently inactive, closed, or unpublished.", "error", "Security Violation");
     return;
   }
 
@@ -448,7 +448,7 @@ async function initializeActiveExam() {
     const rawQuestions = qSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
     if (rawQuestions.length < activeCbtExam.numQuestions) {
-      alert(`⚠️ Course Syllabus Question Deficit!\n\nThe examination demands ${activeCbtExam.numQuestions} questions, but only ${rawQuestions.length} questions exist in the course question bank.\n\nPlease contact your course lecturer or coordinator.`);
+      await window.dimabinAlert(`⚠️ Course Syllabus Question Deficit!\n\nThe examination demands ${activeCbtExam.numQuestions} questions, but only ${rawQuestions.length} questions exist in the course question bank.\n\nPlease contact your course lecturer or coordinator.`, "warning", "Question Bank Deficit");
       return;
     }
 
@@ -533,18 +533,18 @@ function startCbtTimer() {
   if (cbtTimerInterval) clearInterval(cbtTimerInterval);
   updateCbtTimerDisplay();
 
-  cbtTimerInterval = setInterval(() => {
+  cbtTimerInterval = setInterval(async () => {
     cbtSecondsLeft--;
     updateCbtTimerDisplay();
 
     // Warning at 5 minutes
     if (cbtSecondsLeft === 300) {
-      alert("⚠️ Warning: Only 5 minutes remaining on your timer!");
+      await window.dimabinAlert("⚠️ Warning: Only 5 minutes remaining on your timer!", "warning", "Timer Warning");
     }
 
     if (cbtSecondsLeft <= 0) {
       clearInterval(cbtTimerInterval);
-      alert("⏱️ Time is up! Your responses are being submitted automatically.");
+      await window.dimabinAlert("⏱️ Time is up! Your responses are being submitted automatically.", "info", "Time Up");
       submitExamination(true);
     }
   }, 1000);
@@ -762,11 +762,11 @@ document.getElementById("btnCbtFlag")?.addEventListener("click", () => {
   renderCbtMatrixGrid();
 });
 
-document.getElementById("btnCbtSubmitExam")?.addEventListener("click", () => {
-  triggerFinalSubmissionRequest();
+document.getElementById("btnCbtSubmitExam")?.addEventListener("click", async () => {
+  await triggerFinalSubmissionRequest();
 });
 
-function triggerFinalSubmissionRequest() {
+async function triggerFinalSubmissionRequest() {
   const total = activeCbtQuestions.length;
   const answered = Object.keys(studentAnswers).length;
   const unanswered = total - answered;
@@ -777,7 +777,8 @@ function triggerFinalSubmissionRequest() {
   }
   promptMsg += `\nAre you sure you want to finalize this exam submission? This action is absolute, and no re-takes are permitted.`;
 
-  if (confirm(promptMsg)) {
+  const userConfirmed = await window.dimabinConfirm(promptMsg, "Submit Assessment Check");
+  if (userConfirmed) {
     submitExamination(false);
   }
 }
@@ -1015,7 +1016,7 @@ async function submitExamination(isAutoTimeUp = false) {
 
   } catch (err) {
     console.error("Result commit error:", err);
-    alert(`⚠️ Critical Error!\n\nYour score is calculated: ${score}/${totalPossibleMarks} (${percentage}%), but we failed to synchronize it with the cloud database: ${err.message}.\n\nPlease do NOT close this window. Take a screenshot of this page immediately and submit it to your coordinator.`);
+    await window.dimabinAlert(`⚠️ Critical Error!\n\nYour score is calculated: ${score}/${totalPossibleMarks} (${percentage}%), but we failed to synchronize it with the cloud database: ${err.message}.\n\nPlease do NOT close this window. Take a screenshot of this page immediately and submit it to your coordinator.`, "error", "Critical Sync Error");
   }
 }
 

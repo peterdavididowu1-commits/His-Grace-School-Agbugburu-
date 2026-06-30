@@ -1699,7 +1699,7 @@
 
       } catch (err) {
         console.error("❌ Application submission failed:", err);
-        alert(`Failed to submit application: ${err.message}. Please check your connection and try again.`);
+        await window.dimabinAlert(`Failed to submit application: ${err.message}. Please check your connection and try again.`, "error", "Submission Failed");
       } finally {
         loadingOverlay.style.display = 'none';
         btnSubmit.disabled = false;

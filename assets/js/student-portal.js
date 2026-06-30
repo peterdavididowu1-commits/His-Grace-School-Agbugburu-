@@ -174,7 +174,7 @@ if (linkForgotPassword) {
     e.preventDefault();
     const studentIdInput = document.getElementById("studentId").value.trim();
     if (!studentIdInput) {
-      alert("Please enter your Student ID or Matric Number in the login form so we can find your registered email.");
+      await window.dimabinAlert("Please enter your Student ID or Matric Number in the login form so we can find your registered email.", "warning");
       return;
     }
 
@@ -199,9 +199,9 @@ if (linkForgotPassword) {
       }
 
       await sendPasswordResetEmail(auth, studentDoc.email);
-      alert(`A secure password reset link has been dispatched to your registered email: ${studentDoc.email}. Please check your inbox and spam folders.`);
+      await window.dimabinAlert(`A secure password reset link has been dispatched to your registered email: ${studentDoc.email}. Please check your inbox and spam folders.`, "success");
     } catch (err) {
-      alert("Forgot password reset failed: " + err.message);
+      await window.dimabinAlert("Forgot password reset failed: " + err.message, "error");
     }
   });
 }
@@ -628,7 +628,8 @@ if (courseRegForm) {
       return;
     }
 
-    if (!confirm(`Register the selected ${checkboxes.length} theological course outline(s) for the current session? This record is final once logged.`)) return;
+    const userConfirmed = await window.dimabinConfirm(`Register the selected ${checkboxes.length} theological course outline(s) for the current session? This record is final once logged.`);
+    if (!userConfirmed) return;
 
     const btnSubmit = document.getElementById("btnSubmitCourseReg");
     if (btnSubmit) btnSubmit.disabled = true;
