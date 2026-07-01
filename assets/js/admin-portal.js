@@ -875,7 +875,7 @@ async function processApproval(id) {
     closeDetailsModal();
 
     // Show success credentials prompt to copy or print
-    showCredentialsReceipt(app.fullName, studentId, matricNumber, tempPassword);
+    showCredentialsReceipt(app.fullName, studentId, matricNumber, tempPassword, app.email);
 
     // Refresh dashboard data
     await loadApplications();
@@ -885,7 +885,7 @@ async function processApproval(id) {
     if (emailSent) {
       window.showToast("Admission approved successfully. Login credentials have been sent to the student's email.", "success");
     } else {
-      window.showToast("Admission approved successfully, but the confirmation email could not be sent. Please try sending it again.", "warning");
+      window.showToast("Admission approved successfully, but the confirmation email could not be sent. Please copy them manually or click 'Send Email Again'.", "warning");
     }
 
   } catch (err) {
@@ -903,7 +903,7 @@ const btnCloseDetailsModal = document.getElementById("btnCloseDetailsModal");
 if (btnCloseDetailsModal) btnCloseDetailsModal.addEventListener("click", window.closeDetailsModal);
 
 // Dynamic Credentials slips (print & copy)
-function showCredentialsReceipt(name, studentId, matric, password) {
+function showCredentialsReceipt(name, studentId, matric, password, email) {
   const modal = document.getElementById("appDetailsModal");
   const body = document.getElementById("appDetailsBody");
   if (!modal || !body) return;
@@ -944,6 +944,9 @@ function showCredentialsReceipt(name, studentId, matric, password) {
         <button class="btn btn-accent" id="btnPrintPortalCreds">
           <i class="fa-solid fa-print"></i> Print Slip
         </button>
+        <button class="btn" id="btnRetryEmailDispatch" style="background-color: var(--secondary); color: var(--text-dark); border: 1.5px solid var(--border-color);">
+          <i class="fa-solid fa-envelope"></i> Send Email Again
+        </button>
         <button class="btn btn-outline-primary" id="btnCloseReceiptBtn">
           Close Dossier
         </button>
@@ -963,7 +966,6 @@ function showCredentialsReceipt(name, studentId, matric, password) {
   document.getElementById("btnPrintPortalCreds").addEventListener("click", () => {
     const content = document.getElementById("printCredentialsArea").innerHTML;
     const win = window.open("", "_blank");
-    // Split <script> tags to avoid HTML parsing issues
     win.document.write(`
       <html>
         <head>
@@ -981,6 +983,45 @@ function showCredentialsReceipt(name, studentId, matric, password) {
     `);
     win.document.close();
   });
+
+  const btnRetry = document.getElementById("btnRetryEmailDispatch");
+  if (btnRetry) {
+    btnRetry.addEventListener("click", async () => {
+      btnRetry.disabled = true;
+      btnRetry.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Retrying Email...`;
+      try {
+        const loginLink = window.location.origin + "/pages/student-portal.html";
+        const changePasswordInstruction = "Please make sure to change your temporary password after your first login for security purposes.";
+        const emailParams = {
+          student_name: name || "Student",
+          to_name: name || "Student",
+          admission_number: matric,
+          username: matric,
+          matric_number: matric,
+          temporary_password: password,
+          password: password,
+          student_portal_login_link: loginLink,
+          login_link: loginLink,
+          portal_link: loginLink,
+          change_password_message: changePasswordInstruction,
+          message_instruction: changePasswordInstruction,
+          academic_session: "2026/2027"
+        };
+        const emailResult = await prepareAndLogEmail("admission", name, email, emailParams);
+        if (emailResult && emailResult.success) {
+          window.showToast("Admission confirmation email sent successfully!", "success");
+        } else {
+          window.showToast("Failed to send email. Please verify your EmailJS configurations.", "error");
+        }
+      } catch (err) {
+        console.error("Email dispatch retry failed:", err);
+        window.showToast("Failed to dispatch email: " + err.message, "error");
+      } finally {
+        btnRetry.disabled = false;
+        btnRetry.innerHTML = `<i class="fa-solid fa-envelope"></i> Send Email Again`;
+      }
+    });
+  }
 
   document.getElementById("btnCloseReceiptBtn").addEventListener("click", closeDetailsModal);
 

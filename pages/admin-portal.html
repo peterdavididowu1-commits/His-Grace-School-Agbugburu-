@@ -1174,9 +1174,7 @@
           <button class="sidebar-nav-btn" data-tab="courses-allocation">
             <i class="fa-solid fa-list-check"></i> Course Allocation
           </button>
-          <button class="sidebar-nav-btn" data-tab="cbt-control">
-            <i class="fa-solid fa-graduation-cap"></i> CBT Control Center
-          </button>
+
           <button class="sidebar-nav-btn" data-tab="result-approval">
             <i class="fa-solid fa-file-signature"></i> Result Approval
           </button>
@@ -1800,8 +1798,8 @@
           </div>
         </div>
 
-        <!-- Tab 8: CBT Control Center -->
-        <div class="tab-content" id="tab-cbt-control">
+        <!-- Tab 8: CBT Control Center (Disabled and Hidden) -->
+        <div class="tab-content" id="tab-cbt-control" style="display: none !important;">
           <div style="margin-bottom: 2rem;">
             <h2 class="font-display" style="color: var(--primary); font-size: 2rem; margin-bottom: 0.5rem; font-weight: 800;">CBT Control Center</h2>
             <p style="color: var(--text-muted);">Manage institution-wide Computer-Based Testing configurations, monitor live runs, and process grades.</p>
@@ -1942,29 +1940,11 @@
           </div>
         </div>
 
-        <!-- Tab: Result Approval & CBT Import Control -->
+        <!-- Tab: Result Approval -->
         <div class="tab-content" id="tab-result-approval">
           <div style="margin-bottom: 2rem;">
             <h2 class="font-display" style="color: var(--primary); font-size: 2rem; margin-bottom: 0.5rem; font-weight: 800;">Result Approval Console</h2>
             <p style="color: var(--text-muted);">View lecturer grading worksheets, approve, reject, or publish results system-wide.</p>
-          </div>
-
-          <!-- CBT Integration & Settings Switch Card -->
-          <div class="portal-card" style="background-color: var(--bg-white); border-radius: var(--border-radius-lg); border: 1.5px solid var(--border-color); padding: 1.5rem; margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
-              <i class="fa-solid fa-network-wired" style="font-size: 1.75rem; color: var(--accent);"></i>
-              <div>
-                <h4 style="margin: 0; color: var(--primary); font-weight: 700; font-size: 1.05rem;">CBT score Continuous Assessment Integration</h4>
-                <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);">Enabling this allows faculty members to automatically import student CBT percentage grades into Continuous Assessment.</p>
-              </div>
-            </div>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <label class="switch" style="position: relative; display: inline-block; width: 48px; height: 24px; margin: 0;">
-                <input type="checkbox" id="adminCbtImportSwitch" style="opacity: 0; width: 0; height: 0;">
-                <span class="slider" id="adminCbtImportSlider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px;"></span>
-              </label>
-              <span id="adminCbtSwitchStatus" style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted);">Disabled</span>
-            </div>
           </div>
 
           <!-- Filter & Search Controls -->
