@@ -11,6 +11,7 @@
   <!-- FontAwesome Icons & Stylesheets -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="../assets/css/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <style>
     /* Additional Page Polish for Admissions */
@@ -1335,11 +1336,11 @@
 
         <!-- Success CTA Action buttons -->
         <div class="no-print" style="display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap;">
-          <button type="button" class="btn btn-primary" onclick="window.print();">
-            <i class="fa-solid fa-print"></i> Print Application Slip
+          <button type="button" class="btn btn-primary" id="btnPrintApplication">
+            🖨️ Print Application
           </button>
           <button type="button" class="btn btn-outline-primary" id="btnDownloadPDF">
-            <i class="fa-solid fa-file-pdf"></i> Download Slip as PDF
+            📥 Download PDF
           </button>
           <a href="../index.html" class="btn btn-accent" style="color: var(--primary-dark);">
             <i class="fa-solid fa-house"></i> Return to Home
@@ -1623,10 +1624,423 @@
       loadingOverlay.style.display = 'flex';
       btnSubmit.disabled = true;
 
+    // Global application cache
+    let currentApplication = null;
+
+    // Helper to render high-fidelity professional admission form layout inside slip container
+    function renderApplicationSlip(data) {
+      if (!data) return;
+      const submitDateStr = data.submittedAt ? (new Date(data.submittedAt).toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }) + ' UTC') : 'N/A';
+      
+      // Passport photo styling
+      let passportHtml = '';
+      if (data.passportPhoto) {
+        passportHtml = `<img src="${data.passportPhoto}" style="width: 120px; height: 120px; object-fit: cover; border: 2px solid #1F3B82; border-radius: 4px;" alt="Passport Photograph">`;
+      } else {
+        passportHtml = `
+          <div style="width: 120px; height: 120px; border: 2px dashed #e2e8f0; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.75rem; text-align: center; color: #718096; background: #f7fafc; border-radius: 4px; padding: 0.5rem; box-sizing: border-box;">
+            <i class="fa-solid fa-user" style="font-size: 1.5rem; margin-bottom: 0.25rem; color: #1F3B82;"></i>
+            Passport<br>Photo
+          </div>
+        `;
+      }
+
+      const htmlContent = `
+        <div style="font-family: 'Inter', system-ui, -apple-system, sans-serif; color: #2d3748; padding: 1.5rem; background: #ffffff;">
+          <!-- Top Branding & Logo Header -->
+          <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 3px double #1F3B82; padding-bottom: 1rem; margin-bottom: 1.5rem;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+              <img src="../assets/images/logo.jpg" alt="DIMABIN Logo" style="height: 70px; width: auto; border-radius: 4px;" onerror="this.src='https://placehold.co/100x100?text=DIMABIN';">
+              <div>
+                <h2 class="font-display" style="color: #1F3B82; margin: 0; font-size: 1.5rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Divine Mandate Bible Institute</h2>
+                <p style="margin: 0.15rem 0 0 0; color: #F4B000; font-weight: 700; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">(DIMABIN) • ADMISSION REGISTRY</p>
+                <span style="font-size: 0.7rem; color: #718096; display: block; margin-top: 0.1rem;">Motto: "Fear of God Without a Mess"</span>
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <div style="background-color: #122452; color: white; padding: 0.4rem 0.8rem; font-size: 0.7rem; font-weight: 700; border-radius: 4px; display: inline-block; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid #F4B000;">PROVISIONAL CANDIDATE</div>
+              <div style="margin-top: 0.5rem; font-size: 0.8rem; color: #718096; font-weight: 600;">Admission Application</div>
+            </div>
+          </div>
+
+          <h3 class="font-display" style="color: #1F3B82; font-size: 1.2rem; margin-top: 0; margin-bottom: 1.5rem; text-align: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 0.5rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
+            Admission Application Form
+          </h3>
+
+          <!-- Top Section Grid -->
+          <div style="display: flex; gap: 1.5rem; margin-bottom: 1.5rem; align-items: flex-start;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; flex-grow: 1;">
+              <tr>
+                <td style="padding: 0.4rem 0; font-weight: 700; color: #1F3B82; width: 35%; border-bottom: 1px solid #e2e8f0;">Application Number:</td>
+                <td style="padding: 0.4rem 0; font-weight: 800; color: #c53030; font-size: 1.1rem; border-bottom: 1px solid #e2e8f0;">${data.applicationNumber}</td>
+              </tr>
+              <tr>
+                <td style="padding: 0.4rem 0; font-weight: 700; color: #1F3B82; border-bottom: 1px solid #e2e8f0;">Date Submitted:</td>
+                <td style="padding: 0.4rem 0; color: #2d3748; border-bottom: 1px solid #e2e8f0;">${submitDateStr}</td>
+              </tr>
+              <tr>
+                <td style="padding: 0.4rem 0; font-weight: 700; color: #1F3B82; border-bottom: 1px solid #e2e8f0;">Admission Status:</td>
+                <td style="padding: 0.4rem 0; font-weight: 700; color: #b7791f; border-bottom: 1px solid #e2e8f0; text-transform: uppercase;"><i class="fa-solid fa-clock-rotate-left" style="margin-right: 0.25rem;"></i> ${data.admissionStatus || 'Pending Review'}</td>
+              </tr>
+              <tr>
+                <td style="padding: 0.4rem 0; font-weight: 700; color: #1F3B82; border-bottom: 1px solid #e2e8f0;">Academic Session:</td>
+                <td style="padding: 0.4rem 0; color: #2d3748; border-bottom: 1px solid #e2e8f0;">${data.academicSession}</td>
+              </tr>
+              <tr>
+                <td style="padding: 0.4rem 0; font-weight: 700; color: #1F3B82; border-bottom: 1px solid #e2e8f0;">Intended Semester:</td>
+                <td style="padding: 0.4rem 0; color: #2d3748; border-bottom: 1px solid #e2e8f0;">${data.semester}</td>
+              </tr>
+            </table>
+            
+            <div style="flex-shrink: 0;">
+              ${passportHtml}
+            </div>
+          </div>
+
+          <!-- Section 1: Personal Profile -->
+          <div style="margin-bottom: 1.25rem;">
+            <h4 class="font-display" style="background-color: #122452; color: white; padding: 0.4rem 0.6rem; font-size: 0.85rem; font-weight: bold; margin: 0 0 0.5rem 0; text-transform: uppercase; letter-spacing: 0.5px; border-radius: 4px;">
+              I. Applicant Personal Profile
+            </h4>
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem; border: 1px solid #e2e8f0;">
+              <tr style="background-color: #f7fafc;">
+                <td style="padding: 0.4rem; font-weight: 700; color: #1F3B82; width: 25%; border: 1px solid #e2e8f0;">Full Name:</td>
+                <td colspan="3" style="padding: 0.4rem; color: #2d3748; font-weight: bold; border: 1px solid #e2e8f0;">${data.fullName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 0.4rem; font-weight: 700; color: #1F3B82; width: 25%; border: 1px solid #e2e8f0;">Gender:</td>
+                <td style="padding: 0.4rem; color: #2d3748; width: 25%; border: 1px solid #e2e8f0;">${data.gender}</td>
+                <td style="padding: 0.4rem; font-weight: 700; color: #1F3B82; width: 25%; border: 1px solid #e2e8f0;">Date of Birth:</td>
+                <td style="padding: 0.4rem; color: #2d3748; width: 25%; border: 1px solid #e2e8f0;">${data.dateOfBirth}</td>
+              </tr>
+              <tr>
+                <td style="padding: 0.4rem; font-weight: 700; color: #1F3B82; border: 1px solid #e2e8f0;">Marital Status:</td>
+                <td style="padding: 0.4rem; color: #2d3748; border: 1px solid #e2e8f0;">${data.maritalStatus}</td>
+                <td style="padding: 0.4rem; font-weight: 700; color: #1F3B82; border: 1px solid #e2e8f0;">Nationality:</td>
+                <td style="padding: 0.4rem; color: #2d3748; border: 1px solid #e2e8f0;">${data.nationality}</td>
+              </tr>
+              <tr style="background-color: #f7fafc;">
+                <td style="padding: 0.4rem; font-weight: 700; color: #1F3B82; border: 1px solid #e2e8f0;">State of Origin:</td>
+                <td style="padding: 0.4rem; color: #2d3748; border: 1px solid #e2e8f0;">${data.stateOfOrigin}</td>
+                <td style="padding: 0.4rem; font-weight: 700; color: #1F3B82; border: 1px solid #e2e8f0;">Local Government (LGA):</td>
+                <td style="padding: 0.4rem; color: #2d3748; border: 1px solid #e2e8f0;">${data.lga}</td>
+              </tr>
+              <tr>
+                <td style="padding: 0.4rem; font-weight: 700; color: #1F3B82; border: 1px solid #e2e8f0;">Phone Number:</td>
+                <td style="padding: 0.4rem; color: #2d3748; border: 1px solid #e2e8f0;">${data.phone}</td>
+                <td style="padding: 0.4rem; font-weight: 700; color: #1F3B82; border: 1px solid #e2e8f0;">WhatsApp Contact:</td>
+                <td style="padding: 0.4rem; color: #2d3748; border: 1px solid #e2e8f0;">${data.whatsapp}</td>
+              </tr>
+              <tr>
+                <td style="padding: 0.4rem; font-weight: 700; color: #1F3B82; border: 1px solid #e2e8f0;">Email Address:</td>
+                <td colspan="3" style="padding: 0.4rem; color: #2d3748; border: 1px solid #e2e8f0; font-family: monospace;">${data.email}</td>
+              </tr>
+              <tr style="background-color: #f7fafc;">
+                <td style="padding: 0.4rem; font-weight: 700; color: #1F3B82; border: 1px solid #e2e8f0;">Residential Address:</td>
+                <td colspan="3" style="padding: 0.4rem; color: #2d3748; border: 1px solid #e2e8f0;">${data.address}</td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- Section 2: Academic Info -->
+          <div style="margin-bottom: 1.25rem;">
+            <h4 class="font-display" style="background-color: #122452; color: white; padding: 0.4rem 0.6rem; font-size: 0.85rem; font-weight: bold; margin: 0 0 0.5rem 0; text-transform: uppercase; letter-spacing: 0.5px; border-radius: 4px;">
+              II. Programme & Academic Background
+            </h4>
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem; border: 1px solid #e2e8f0;">
+              <tr>
+                <td style="padding: 0.4rem; font-weight: 700; color: #1F3B82; width: 30%; border: 1px solid #e2e8f0; background-color: #f7fafc;">Programme Applied For:</td>
+                <td colspan="3" style="padding: 0.4rem; color: #2d3748; font-weight: bold; border: 1px solid #e2e8f0;">${data.programme} (Dip.Th.)</td>
+              </tr>
+              <tr>
+                <td style="padding: 0.4rem; font-weight: 700; color: #1F3B82; border: 1px solid #e2e8f0;">Previous Qualifications:</td>
+                <td colspan="3" style="padding: 0.4rem; color: #2d3748; border: 1px solid #e2e8f0;">${data.previousSchool} — ${data.highestQualification} (${data.yearOfGraduation})</td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- Section 3: Church Standing -->
+          <div style="margin-bottom: 1.25rem;">
+            <h4 class="font-display" style="background-color: #122452; color: white; padding: 0.4rem 0.6rem; font-size: 0.85rem; font-weight: bold; margin: 0 0 0.5rem 0; text-transform: uppercase; letter-spacing: 0.5px; border-radius: 4px;">
+              III. Church & Ministry Standing
+            </h4>
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem; border: 1px solid #e2e8f0;">
+              <tr style="background-color: #f7fafc;">
+                <td style="padding: 0.4rem; font-weight: 700; color: #1F3B82; width: 30%; border: 1px solid #e2e8f0;">Church Name:</td>
+                <td colspan="3" style="padding: 0.4rem; color: #2d3748; border: 1px solid #e2e8f0;">${data.churchName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 0.4rem; font-weight: 700; color: #1F3B82; border: 1px solid #e2e8f0;">Church Address:</td>
+                <td colspan="3" style="padding: 0.4rem; color: #2d3748; border: 1px solid #e2e8f0;">${data.churchAddress}</td>
+              </tr>
+              <tr>
+                <td style="padding: 0.4rem; font-weight: 700; color: #1F3B82; border: 1px solid #e2e8f0;">Supervising Pastor Name:</td>
+                <td style="padding: 0.4rem; color: #2d3748; width: 35%; border: 1px solid #e2e8f0;">${data.pastorsName}</td>
+                <td style="padding: 0.4rem; font-weight: 700; color: #1F3B82; width: 15%; border: 1px solid #e2e8f0;">Pastor Phone:</td>
+                <td style="padding: 0.4rem; color: #2d3748; width: 20%; border: 1px solid #e2e8f0;">${data.pastorsPhone}</td>
+              </tr>
+              <tr style="background-color: #f7fafc;">
+                <td style="padding: 0.4rem; font-weight: 700; color: #1F3B82; border: 1px solid #e2e8f0;">Current Ministry Position:</td>
+                <td style="padding: 0.4rem; color: #2d3748; border: 1px solid #e2e8f0;">${data.currentPosition}</td>
+                <td style="padding: 0.4rem; font-weight: 700; color: #1F3B82; border: 1px solid #e2e8f0;">Years in Ministry:</td>
+                <td style="padding: 0.4rem; color: #2d3748; border: 1px solid #e2e8f0;">${data.yearsInMinistry || 'N/A'}</td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- Section 4: Next of Kin -->
+          <div style="margin-bottom: 2rem;">
+            <h4 class="font-display" style="background-color: #122452; color: white; padding: 0.4rem 0.6rem; font-size: 0.85rem; font-weight: bold; margin: 0 0 0.5rem 0; text-transform: uppercase; letter-spacing: 0.5px; border-radius: 4px;">
+              IV. Next of Kin & Guardian Coordinates
+            </h4>
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem; border: 1px solid #e2e8f0;">
+              <tr>
+                <td style="padding: 0.4rem; font-weight: 700; color: #1F3B82; width: 30%; border: 1px solid #e2e8f0; background-color: #f7fafc;">Full Name:</td>
+                <td style="padding: 0.4rem; color: #2d3748; width: 35%; border: 1px solid #e2e8f0;">${data.nextOfKinName}</td>
+                <td style="padding: 0.4rem; font-weight: 700; color: #1F3B82; width: 15%; border: 1px solid #e2e8f0; background-color: #f7fafc;">Relationship:</td>
+                <td style="padding: 0.4rem; color: #2d3748; width: 20%; border: 1px solid #e2e8f0;">${data.nextOfKinRelationship}</td>
+              </tr>
+              <tr>
+                <td style="padding: 0.4rem; font-weight: 700; color: #1F3B82; border: 1px solid #e2e8f0;">Phone Number:</td>
+                <td colspan="3" style="padding: 0.4rem; color: #2d3748; border: 1px solid #e2e8f0;">${data.nextOfKinPhone}</td>
+              </tr>
+              <tr style="background-color: #f7fafc;">
+                <td style="padding: 0.4rem; font-weight: 700; color: #1F3B82; border: 1px solid #e2e8f0;">Contact Address:</td>
+                <td colspan="3" style="padding: 0.4rem; color: #2d3748; border: 1px solid #e2e8f0;">${data.nextOfKinAddress}</td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- Signoffs -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e2e8f0; font-size: 0.75rem; color: #718096;">
+            <div>
+              <strong>Candidate Acknowledgment:</strong>
+              <div style="height: 30px;"></div>
+              <div style="border-top: 1px solid #e2e8f0; width: 200px; margin-top: 0.5rem; text-align: center;">Signature & Date</div>
+            </div>
+            <div style="text-align: center;">
+              <div style="width: 70px; height: 70px; border: 2px solid #e2e8f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 700; color: #718096; margin: 0 auto 0.25rem auto;">
+                OFFICIAL SEAL
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <strong>Registrar Signoff Coordinate:</strong>
+              <div style="height: 30px;"></div>
+              <div style="border-top: 1px solid #e2e8f0; width: 200px; margin-top: 0.5rem; text-align: center;">Authorized Signatory</div>
+            </div>
+          </div>
+
+          <!-- Footer Declaration -->
+          <div style="border-top: 1px dashed #e2e8f0; margin-top: 1.5rem; padding-top: 0.75rem; text-align: center; font-size: 0.7rem; color: #718096; line-height: 1.4;">
+            Generated from the Divine Mandate Bible Institute (DIMABIN) Admission Portal.<br>
+            © 2026 Divine Mandate Bible Institute. All Rights Reserved. Secure Registry Verification.
+          </div>
+        </div>
+      `;
+      
+      const slipElement = document.getElementById("printableSlipArea");
+      if (slipElement) {
+        slipElement.innerHTML = htmlContent;
+      }
+    }
+
+    // Dynamic database fetcher for the latest application
+    async function getLatestApplication() {
+      let sessionStr = sessionStorage.getItem("dimabin_student_session") || localStorage.getItem("dimabin_student_session");
+      let email = "";
+      if (sessionStr) {
+        try {
+          let parsed = JSON.parse(sessionStr);
+          email = parsed.email;
+        } catch (e) {
+          console.error("Failed to parse student session:", e);
+        }
+      }
+      if (!email) {
+        email = sessionStorage.getItem("dimabin_last_submitted_email") || "";
+      }
+      
+      if (!email) {
+        return null;
+      }
+      
+      const q = query(collection(db, "applications"), where("email", "==", email.toLowerCase().trim()), orderBy("submittedAt", "desc"), limit(1));
+      const snap = await getDocs(q);
+      if (snap.empty) {
+        return null;
+      }
+      return snap.docs[0].data();
+    }
+
+    // Button Print Application Handler
+    async function handlePrintApplication() {
+      let app = currentApplication;
+      if (!app) {
+        app = await getLatestApplication();
+      }
+      
+      if (!app) {
+        if (window.dimabinAlert) {
+          await window.dimabinAlert("No admission application found.", "error", "Print Application");
+        } else {
+          alert("No admission application found.");
+        }
+        return;
+      }
+      
+      // Force render to ensure slip matches the database records correctly
+      renderApplicationSlip(app);
+      
+      // Let rendering complete briefly then trigger native print dialog
+      setTimeout(() => {
+        window.print();
+      }, 150);
+    }
+
+    // Button Download PDF Handler
+    async function handleDownloadPDF() {
+      let app = currentApplication;
+      if (!app) {
+        app = await getLatestApplication();
+      }
+      
+      if (!app) {
+        if (window.dimabinAlert) {
+          await window.dimabinAlert("No admission application found.", "error", "Download PDF");
+        } else {
+          alert("No admission application found.");
+        }
+        return;
+      }
+      
+      // Force render to ensure slip matches database
+      renderApplicationSlip(app);
+      
+      const element = document.getElementById("printableSlipArea");
+      if (!element) return;
+      
+      const opt = {
+        margin:       [10, 10, 10, 10], // standard margins
+        filename:     `DIMABIN_Admission_Form_${app.applicationNumber}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      
+      if (window.showToast) {
+        window.showToast("Compiling PDF download...", "info");
+      }
+      
+      try {
+        html2pdf().set(opt).from(element).save();
+      } catch (pdfErr) {
+        console.error("Error generating PDF via html2pdf:", pdfErr);
+        alert("Failed to compile PDF. Please use the Print Application option to Save as PDF.");
+      }
+    }
+
+    // Check pre-existing application on page load
+    async function checkExistingApplication() {
+      let sessionStr = sessionStorage.getItem("dimabin_student_session") || localStorage.getItem("dimabin_student_session");
+      let email = "";
+      if (sessionStr) {
+        try {
+          let parsed = JSON.parse(sessionStr);
+          email = parsed.email;
+          
+          // Pre-populate fields for user convenience if they have a session but haven't applied
+          if (document.getElementById('fullName') && parsed.fullName) {
+            document.getElementById('fullName').value = parsed.fullName;
+          }
+          if (document.getElementById('email') && parsed.email) {
+            document.getElementById('email').value = parsed.email.toLowerCase();
+          }
+        } catch (e) {
+          console.error("Failed to parse student session on page load:", e);
+        }
+      }
+      
+      if (!email) {
+        email = sessionStorage.getItem("dimabin_last_submitted_email") || "";
+      }
+      
+      if (email) {
+        loadingOverlay.style.display = 'flex';
+        try {
+          const q = query(collection(db, "applications"), where("email", "==", email.toLowerCase().trim()), orderBy("submittedAt", "desc"), limit(1));
+          const snap = await getDocs(q);
+          if (!snap.empty) {
+            currentApplication = snap.docs[0].data();
+            renderApplicationSlip(currentApplication);
+            
+            // Transition views to success card immediately
+            document.getElementById('applicationFormContainer').style.display = 'none';
+            document.getElementById('successCardContainer').style.display = 'block';
+          }
+        } catch (err) {
+          console.error("Error checking pre-existing application on start:", err);
+        } finally {
+          loadingOverlay.style.display = 'none';
+        }
+      }
+    }
+
+    // Call dynamic checkers immediately
+    await checkExistingApplication();
+
+    // Bind action listeners once
+    const btnPrintAppElement = document.getElementById('btnPrintApplication');
+    const btnDownloadPDFElement = document.getElementById('btnDownloadPDF');
+
+    if (btnPrintAppElement) {
+      btnPrintAppElement.addEventListener('click', handlePrintApplication);
+    }
+    if (btnDownloadPDFElement) {
+      btnDownloadPDFElement.addEventListener('click', handleDownloadPDF);
+    }
+
+    // Handle form submit
+    const form = document.getElementById('admissionForm');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      if (!validateStep(5)) {
+        return;
+      }
+
+      // Activate loader
+      loadingOverlay.style.display = 'flex';
+      btnSubmit.disabled = true;
+
       try {
         // Generate Unique Application ID sequentially
         const finalAppNum = await generateApplicationNumber();
         const submitTimestamp = new Date().toISOString();
+
+        // Convert passport file if selected
+        let passportPhoto = "";
+        const passportInput = document.getElementById('passportFile');
+        if (passportInput && passportInput.files && passportInput.files[0]) {
+          try {
+            const getBase64 = (file) => {
+              return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+              });
+            };
+            passportPhoto = await getBase64(passportInput.files[0]);
+          } catch (fileErr) {
+            console.error("Failed to read passport photograph file:", fileErr);
+          }
+        }
 
         // Build Firestore document data structure
         const appData = {
@@ -1637,6 +2051,7 @@
           semester: activeSemester,
           reviewedBy: null,
           remarks: "",
+          passportPhoto: passportPhoto,
           
           // Form Fields:
           // Personal Information
@@ -1678,24 +2093,17 @@
         await addDoc(applicationsCollRef, appData);
         console.log(`🎉 Success! Application successfully saved with Number: ${finalAppNum}`);
 
-        // Populate Success Slip
-        document.getElementById('resAppNumber').textContent = finalAppNum;
-        document.getElementById('resFullName').textContent = appData.fullName;
-        document.getElementById('resProgramme').textContent = `${appData.programme} (Dip.Th.)`;
-        document.getElementById('resAcademicSession').textContent = appData.academicSession;
-        document.getElementById('resSemester').textContent = appData.semester;
-        
-        // Format Date nicely: YYYY-MM-DD HH:MM
-        const formattedDate = new Date(submitTimestamp).toISOString().replace('T', ' ').substring(0, 16) + ' UTC';
-        document.getElementById('resSubmitDate').textContent = formattedDate;
+        // Update local session caches to remember submission on reload
+        sessionStorage.setItem("dimabin_last_submitted_email", appData.email);
+        currentApplication = appData;
+
+        // Render success slip dynamically
+        renderApplicationSlip(appData);
 
         // Transition views
         document.getElementById('applicationFormContainer').style.display = 'none';
         document.getElementById('successCardContainer').style.display = 'block';
         document.getElementById('apply-now-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-        // Setup PDF download coordinates
-        setupPdfDownloadButton(appData, formattedDate);
 
       } catch (err) {
         console.error("❌ Application submission failed:", err);
@@ -1705,71 +2113,6 @@
         btnSubmit.disabled = false;
       }
     });
-
-    // High fidelity candidate document download helper
-    function setupPdfDownloadButton(data, formattedDate) {
-      const pdfBtn = document.getElementById('btnDownloadPDF');
-      pdfBtn.addEventListener('click', () => {
-        // Construct printable text format to simulate an official slip
-        const content = `===========================================================
-               DIVINE MANDATE BIBLE INSTITUTE
-                        (DIMABIN)
-           OFFICIAL ADMISSION APPLICATION CERTIFICATE
-===========================================================
-
-APPLICATION DETAILS:
------------------------------------------------------------
-Application Number : ${data.applicationNumber}
-Submission Date    : ${formattedDate}
-Admission Status   : PENDING REVIEW
-Target Timeline    : Session ${data.academicSession} | ${data.semester}
-
-APPLICANT PROFILE:
------------------------------------------------------------
-Full Name          : ${data.fullName}
-Gender             : ${data.gender}
-Date of Birth      : ${data.dateOfBirth}
-Marital Status     : ${data.maritalStatus}
-Nationality        : ${data.nationality}
-State / LGA of Ori : ${data.stateOfOrigin} / ${data.lga}
-Residential Addr   : ${data.address}
-Primary Phone No.  : ${data.phone}
-WhatsApp Contact   : ${data.whatsapp}
-Email Address      : ${data.email}
-
-ACADEMIC RECORDS:
------------------------------------------------------------
-Programme Intended : ${data.programme} (Dip.Th.)
-Previous School    : ${data.previousSchool}
-Highest Degree     : ${data.highestQualification}
-Graduation Year    : ${data.yearOfGraduation}
-
-CHURCH & MINISTRY STANDING:
------------------------------------------------------------
-Church Affiliation : ${data.churchName}
-Church Address     : ${data.churchAddress}
-Supervising Pastor : ${data.pastorsName} (${data.pastorsPhone})
-Current Role/Title : ${data.currentPosition}
-Years in Ministry  : ${data.yearsInMinistry || 'N/A'}
-
-EMERGENCY / NEXT OF KIN COORDINATES:
------------------------------------------------------------
-Emergency Contact  : ${data.nextOfKinName} (${data.nextOfKinRelationship})
-Phone Number       : ${data.nextOfKinPhone}
-Address            : ${data.nextOfKinAddress}
-
------------------------------------------------------------
-Motto: "Fear of God Without a Mess"
-Official DIMABIN Online Portal Registry
-===========================================================`;
-
-        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = `DIMABIN_Admission_Slip_${data.applicationNumber}.txt`;
-        link.click();
-      });
-    }
 
   </script>
 </body>
