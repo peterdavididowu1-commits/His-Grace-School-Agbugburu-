@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /index.html
+Allow: /pages/about.html
+Allow: /pages/admissions.html
+Allow: /pages/admission-status.html
+Allow: /pages/contact.html
+Disallow: /pages/admin-portal.html
+Disallow: /pages/student-portal.html
+Disallow: /pages/lecturer-portal.html
+Disallow: /pages/student-cbt-dashboard.html
+Disallow: /functions/
+
+Sitemap: https://ais-pre-ekckh44s3rnajaoptnewrq-954755939199.europe-west2.run.app/sitemap.xml

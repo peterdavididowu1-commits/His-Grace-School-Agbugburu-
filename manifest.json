@@ -1,0 +1,23 @@
+{
+  "name": "Divine Mandate Bible Institute",
+  "short_name": "DIMABIN",
+  "description": "Official portal of Divine Mandate Bible Institute (DIMABIN).",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#1F3B82",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/assets/images/logo.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/images/logo.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    }
+  ]
+}
