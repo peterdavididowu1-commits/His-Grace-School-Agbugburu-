@@ -93,15 +93,25 @@ export async function prepareAndLogEmail(templateIdType, recipientName, recipien
   // Dispatch actual EmailJS HTTP request using EmailJS REST API
   try {
     const url = `https://api.emailjs.com/api/v1.0/email/send`;
+    
+    // Construct template params dynamically
+    let finalTemplateParams;
+    if (templateParams && templateParams.email !== undefined) {
+      // Do not send student_email or to_email to prevent recipient's address empty error
+      finalTemplateParams = { ...templateParams };
+    } else {
+      finalTemplateParams = {
+        to_name: recipientName,
+        to_email: recipientEmail,
+        ...templateParams
+      };
+    }
+
     const payload = {
       service_id: config.serviceId,
       template_id: actualTemplateId,
       user_id: config.publicKey,
-      template_params: {
-        to_name: recipientName,
-        to_email: recipientEmail,
-        ...templateParams
-      }
+      template_params: finalTemplateParams
     };
 
     console.log("🚀 Dispatched actual EmailJS HTTP request to API...");

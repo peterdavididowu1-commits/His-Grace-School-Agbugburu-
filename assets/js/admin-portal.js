@@ -849,36 +849,43 @@ async function processApproval(id) {
     let emailSent = false;
     let emailErrorMsg = "";
     try {
-      const loginLink = window.location.origin + "/pages/student-portal.html";
-      const emailParams = {
-        student_name: app.fullName || "",
-        student_email: app.email || "",
-        student_id: studentId || "",
-        matric_number: matricNumber || "",
-        programme: app.programme || "Diploma in Theology",
-        department: app.department || "Theology",
-        session: "2026/2027",
-        temporary_password: tempPassword || "",
-        portal_link: loginLink,
-        institution_name: "Divine Mandate Bible Institute (DIMABIN)",
-        institution_address: "Goshen 13, Kusimo Street, Kemta, Oke-Ola, Idi-Aba, Abeokuta, Ogun State, Nigeria.",
-        contact_phone: "08038194611, 08062186974, 08037282082",
-        contact_email: "dimabin233@gmail.com"
-      };
-
-      // Check for missing required variables
-      const missingParams = [];
-      for (const [key, val] of Object.entries(emailParams)) {
-        if (!val || String(val).trim() === "") {
-          missingParams.push(key);
-        }
+      // 1. Before sending, retrieve the student's email from the approved admission record in Firestore
+      const studentDocRef = doc(db, "students", matricNumber.replace(/\//g, "-"));
+      const studentSnap = await getDoc(studentDocRef);
+      if (!studentSnap.exists()) {
+        throw new Error("Student record does not exist in Firestore.");
       }
+      const student = studentSnap.data();
 
-      if (missingParams.length > 0) {
-        emailErrorMsg = "Required Admission Confirmation email parameters are missing: " + missingParams.join(", ");
-        console.error("❌ " + emailErrorMsg);
+      // 2. Verify that "student.email" exists and is not empty.
+      if (!student.email || String(student.email).trim() === "" || student.email === "N/A") {
+        // 5. If "student.email" is missing:
+        // - Do not call EmailJS.
+        // - Show: "Student email address is missing."
+        emailErrorMsg = "Student email address is missing.";
+        console.error("Student email address is missing.");
+        window.showToast("Student email address is missing.", "error");
       } else {
-        const emailResult = await prepareAndLogEmail("admission", app.fullName, app.email, emailParams);
+        const studentPortalLink = window.location.origin + "/pages/student-portal.html";
+        const currentSession = student.academicSession || "2026/2027";
+        const generatedPassword = tempPassword;
+
+        // 3. Build the EmailJS payload like this:
+        const templateParams = {
+          email: student.email,
+          student_name: student.fullName,
+          student_id: student.studentId,
+          matric_number: student.matricNumber,
+          programme: student.programme,
+          session: currentSession,
+          temporary_password: generatedPassword,
+          portal_link: studentPortalLink
+        };
+
+        // 4. Before calling "emailjs.send()", log:
+        console.log("EmailJS Payload:", templateParams);
+
+        const emailResult = await prepareAndLogEmail("admission", student.fullName, student.email, templateParams);
         if (emailResult && emailResult.success) {
           emailSent = true;
         } else {
@@ -904,8 +911,9 @@ async function processApproval(id) {
       window.showToast("Admission approved successfully.", "success");
       window.showToast("Admission confirmation email sent successfully.", "success");
     } else {
-      const displayErr = emailErrorMsg || "Email configurations are invalid.";
-      window.showToast("Admission approved successfully, but sending email failed: " + displayErr, "error");
+      if (emailErrorMsg && emailErrorMsg !== "Student email address is missing.") {
+        window.showToast(emailErrorMsg, "error");
+      }
     }
 
   } catch (err) {
@@ -1010,48 +1018,48 @@ function showCredentialsReceipt(name, studentId, matric, password, email, progra
       btnRetry.disabled = true;
       btnRetry.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Retrying Email...`;
       try {
-        const loginLink = window.location.origin + "/pages/student-portal.html";
-        const emailParams = {
-          student_name: name || "",
-          student_email: email || "",
-          student_id: studentId || "",
-          matric_number: matric || "",
-          programme: programme || "Diploma in Theology",
-          department: department || "Theology",
-          session: "2026/2027",
-          temporary_password: password || "",
-          portal_link: loginLink,
-          institution_name: "Divine Mandate Bible Institute (DIMABIN)",
-          institution_address: "Goshen 13, Kusimo Street, Kemta, Oke-Ola, Idi-Aba, Abeokuta, Ogun State, Nigeria.",
-          contact_phone: "08038194611, 08062186974, 08037282082",
-          contact_email: "dimabin233@gmail.com"
-        };
-
-        // Check for missing required variables
-        const missingParams = [];
-        for (const [key, val] of Object.entries(emailParams)) {
-          if (!val || String(val).trim() === "") {
-            missingParams.push(key);
-          }
+        // Retrieve student's email from approved admission record in Firestore
+        const studentDocRef = doc(db, "students", matric.replace(/\//g, "-"));
+        const studentSnap = await getDoc(studentDocRef);
+        if (!studentSnap.exists()) {
+          throw new Error("Student record does not exist in Firestore.");
         }
+        const student = studentSnap.data();
 
-        if (missingParams.length > 0) {
-          const errMsg = "Required Admission Confirmation email parameters are missing: " + missingParams.join(", ");
-          console.error("❌ " + errMsg);
-          window.showToast("Failed to dispatch email: " + errMsg, "error");
+        // Verify that "student.email" exists and is not empty.
+        if (!student.email || String(student.email).trim() === "" || student.email === "N/A") {
+          console.error("Student email address is missing.");
+          window.showToast("Student email address is missing.", "error");
           return;
         }
 
-        const emailResult = await prepareAndLogEmail("admission", name, email, emailParams);
+        const studentPortalLink = window.location.origin + "/pages/student-portal.html";
+        const currentSession = student.academicSession || "2026/2027";
+        const generatedPassword = password;
+        const templateParams = {
+          email: student.email,
+          student_name: student.fullName,
+          student_id: student.studentId,
+          matric_number: student.matricNumber,
+          programme: student.programme,
+          session: currentSession,
+          temporary_password: generatedPassword,
+          portal_link: studentPortalLink
+        };
+
+        // Before calling "emailjs.send()", log:
+        console.log("EmailJS Payload:", templateParams);
+
+        const emailResult = await prepareAndLogEmail("admission", student.fullName, student.email, templateParams);
         if (emailResult && emailResult.success) {
           window.showToast("Admission confirmation email sent successfully.", "success");
         } else {
           const errMsg = emailResult ? emailResult.error : "Unknown dispatch error";
-          window.showToast("Failed to send email: " + errMsg, "error");
+          window.showToast(errMsg, "error");
         }
       } catch (err) {
         console.error("Email dispatch retry failed:", err);
-        window.showToast("Failed to dispatch email: " + err.message, "error");
+        window.showToast(err.message, "error");
       } finally {
         btnRetry.disabled = false;
         btnRetry.innerHTML = `<i class="fa-solid fa-envelope"></i> Send Email Again`;
